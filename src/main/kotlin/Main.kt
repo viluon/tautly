@@ -1,22 +1,42 @@
+import GLFWAction.*
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
-import org.lwjgl.glfw.GLFWKeyCallbackI
+import org.lwjgl.nanovg.NanoVG.nvgBeginFrame
+import org.lwjgl.nanovg.NanoVG.nvgEndFrame
+import org.lwjgl.nanovg.NanoVGGL3.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.system.MemoryUtil.NULL
-
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 fun main() {
     println("launching Tautly with LWJGL ${Version.getVersion()}")
 
-    val keyCallback = GLFWKeyCallbackI { window, key, _, action, _ ->
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, true)
-        }
-    }
+    glfw()
+}
 
+private fun controller(e: Event, model: Model): Model = when (e) {
+    is CursorEvent ->
+        if (model.mousePressed) model.copy(circles = model.circles + Triple(e.x.toFloat(), e.y.toFloat(), 10f))
+        else model
+    is KeyEvent ->
+        if (e.action == Pressed && e.key == GLFW_KEY_Q) model.copy(shouldClose = true)
+        else model
+    is MouseEvent -> model.copy(mousePressed = e.action == Pressed)
+}
+
+private fun view(canvas: Canvas, model: Model) {
+    val rng = Random(42)
+    val byte = { rng.nextInt(-128..127).toByte() }
+    model.circles.forEach { (cx, cy, rad) ->
+        canvas.circle(cx, cy, rad, byte(), byte(), byte(), 110)
+    }
+}
+
+private fun glfw() {
     val errorCallback = GLFWErrorCallback.createPrint(System.err)
     glfwSetErrorCallback(errorCallback)
 
@@ -24,11 +44,26 @@ fun main() {
         throw IllegalStateException("could not init GLFW")
     }
 
-    val window = glfwCreateWindow(640, 480, "Tautly", NULL, NULL)
-    if (window == NULL) {
+    try {
+        runGlfw()
+    } finally {
         glfwTerminate()
-        throw RuntimeException("could not open a window")
+        errorCallback.free()
     }
+}
+
+private fun runGlfw() {
+    var model = Model()
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2)
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE)
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1)
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+    glfwWindowHint(GLFW_SAMPLES, 4)
+
+    val window = glfwCreateWindow(640, 480, "Tautly", NULL, NULL)
+    if (window == NULL) throw RuntimeException("could not open a window")
 
     val videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor())
         ?: throw RuntimeException("could not read the video mode of the primary monitor")
@@ -37,45 +72,59 @@ fun main() {
     glfwMakeContextCurrent(window)
     GL.createCapabilities()
     glfwSwapInterval(1)
-    glfwSetKeyCallback(window, keyCallback)
+    glfwSetKeyCallback(window) { _, key, scanCode, action, mods ->
+        model = controller(KeyEvent(key, scanCode, parseAction(action), mods), model)
+    }
+    glfwSetCursorPosCallback(window) { _, x, y ->
+        model = controller(CursorEvent(x, y), model)
+    }
+    glfwSetMouseButtonCallback(window) { _, button, action, mods ->
+        model = controller(MouseEvent(button, parseAction(action), mods), model)
+    }
+
+    val nvgContext = nvgCreate(NVG_ANTIALIAS or NVG_STENCIL_STROKES or NVG_DEBUG)
 
     val w = MemoryUtil.memAllocInt(1)
     val h = MemoryUtil.memAllocInt(1)
+    val windowW = MemoryUtil.memAllocInt(1)
+    val windowH = MemoryUtil.memAllocInt(1)
 
-    while (!glfwWindowShouldClose(window)) {
+    val cursorX = MemoryUtil.memAllocDouble(1)
+    val cursorY = MemoryUtil.memAllocDouble(1)
+
+    val buffers = listOf(w, h, windowW, windowH, cursorX, cursorY)
+
+    val canvas = Canvas `in` nvgContext
+
+    while (!model.shouldClose && !glfwWindowShouldClose(window)) {
         glfwGetFramebufferSize(window, w, h)
-        val ratio = w.get().toDouble() / h.get()
-        w.rewind()
-        h.rewind()
+        glfwGetWindowSize(window, windowW, windowH)
+
+        // Nano VG example says this is for hi-dpi devices
+        val pixelRatio = w.get().toFloat() / h.get()
+        buffers.forEach { it.rewind() }
 
         glViewport(0, 0, w.get(), h.get())
-        glClear(GL_COLOR_BUFFER_BIT)
+        glClearColor(0f, 0f, 0f, 1f)
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
 
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(-ratio, ratio, -1.0, 1.0, 1.0, -1.0)
-        glMatrixMode(GL_MODELVIEW)
-
-        glLoadIdentity()
-        glRotatef(glfwGetTime().toFloat() * 50f, 0f, 0f, 1f)
-
-        glBegin(GL_TRIANGLES)
-        glColor3f(1f, 0f, 0f)
-        glVertex3f(-0.6f, -0.4f, 0f)
-        glColor3f(0f, 1f, 0f)
-        glVertex3f(0.6f, -0.4f, 0f)
-        glColor3f(0f, 0f, 1f)
-        glVertex3f(0f, 0.6f, 0f)
-        glEnd()
+        nvgBeginFrame(nvgContext, windowW.get().toFloat(), windowH.get().toFloat(), pixelRatio)
+        view(canvas, model)
+        nvgEndFrame(nvgContext)
 
         glfwSwapBuffers(window)
         glfwPollEvents()
 
-        w.flip()
-        h.flip()
+        buffers.forEach { it.flip() }
     }
 
+    canvas.free()
+    nvgDelete(nvgContext)
     glfwDestroyWindow(window)
-    glfwTerminate()
-    errorCallback.free()
+}
+
+private fun parseAction(rawAction: Int): GLFWAction = when (rawAction) {
+    GLFW_RELEASE -> Released
+    GLFW_PRESS -> Pressed
+    else -> Repeated
 }
