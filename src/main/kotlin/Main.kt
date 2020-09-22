@@ -9,10 +9,6 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.system.MemoryUtil.NULL
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 fun main() {
     println("launching Tautly with LWJGL ${Version.getVersion()}")
@@ -20,84 +16,10 @@ fun main() {
     glfw()
 }
 
-private fun Model.addCircle(x: Double, y: Double): Model = copy(
-    circles = circles + Circle(3f, x.toFloat() to y.toFloat(), currentColour)
-)
-
-private fun controller(e: Event, model: Model): Model = when (e) {
-    is CursorEvent -> {
-        val lastPos = e.x to e.y
-        if (model.mousePressed[GLFW_MOUSE_BUTTON_LEFT] == true) model.addCircle(e.x, e.y).copy(cursorPos = lastPos)
-        else model.copy(cursorPos = lastPos)
-    }
-    is KeyEvent ->
-        if (e.action == Pressed && e.key == GLFW_KEY_Q) model.copy(shouldClose = true)
-        else model
-    is MouseEvent -> model handleMouseEvent e
-    is ScrollEvent -> model
-    is ResizeEvent -> model handleResizeEvent e
-}
-
-private infix fun Model.handleResizeEvent(e: ResizeEvent): Model {
-    val (ww, wh) = e.w to e.h
-    val y = wh - palette.separation - palette.radius
-    // reposition the palette
-    return copy(windowSize = e.w to e.h, palette = palette.copy(entries = palette.entries.mapIndexed { i, entry ->
-        val x = ww / 2f + (i - palette.entries.size / 2 + 0.5f) * (2 * palette.radius + palette.separation)
-        entry.copy(position = x to y)
-    }))
-}
-
-private infix fun Pair<Float, Float>.distance(other: Pair<Double, Double>): Float = sqrt(
-    (first - other.first.toFloat()).pow(2) + (second - other.second.toFloat()).pow(2)
-)
-
-private infix fun Model.handleMouseEvent(e: MouseEvent): Model {
-    val (x, y) = cursorPos
-    return if (e.action == Pressed) ({
-        val paletteEntry = palette.entries.firstOrNull { (r, p, _) -> p distance cursorPos <= r }
-        when {
-            paletteEntry != null -> copy(currentColour = paletteEntry.colour)
-            e.button == GLFW_MOUSE_BUTTON_LEFT -> addCircle(x, y)
-            else -> this
-        }
-    }()).copy(mousePressed = mousePressed + (e.button to true))
-    else copy(mousePressed = mousePressed + (e.button to false))
-}
-
-private fun view(canvas: Canvas, model: Model) {
-    model.circles.forEach { (r, pos, colour) ->
-        val (x, y) = pos
-        val (h, s, l) = colour
-        canvas.circle(x, y, r, h, s, l, 1f)
-    }
-
-    val (ww, wh) = model.windowSize
-    val (radius, _, entries) = model.palette
-
-    entries.forEachIndexed { i, (_, pos, colour) ->
-        val (h, s, l) = colour
-        val (curX, curY) = model.cursorPos
-        val (x, y) = pos
-
-        val dist = sqrt((curX - x).pow(2) + (curY - y).pow(2))
-
-        // distance at which the colours disappear completely
-        val falloff = min(ww, wh) / 3
-        val distZeroOne = min(1.0, max(0.0, dist / falloff))
-        val alpha = 1 - distZeroOne
-
-        canvas.circle(x, y, radius, h, s, l, alpha.toFloat())
-    }
-}
-
 private fun glfw() {
     val errorCallback = GLFWErrorCallback.createPrint(System.err)
     glfwSetErrorCallback(errorCallback)
-
-    if (!glfwInit()) {
-        throw IllegalStateException("could not init GLFW")
-    }
+    if (!glfwInit()) throw IllegalStateException("could not init GLFW")
 
     try {
         runGlfw()
@@ -126,16 +48,11 @@ private fun runGlfw() {
         )
     )
 
-    infix fun Model.update(ev: Event): Unit = {
-        model = controller(ev, this)
+    infix fun Model.mutate(ev: Event): Unit = {
+        model = update(ev)
     }()
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2)
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE)
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1)
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-    glfwWindowHint(GLFW_SAMPLES, 4)
+    setUpWindowHints()
 
     val window = glfwCreateWindow(640, 480, "Tautly", NULL, NULL)
     if (window == NULL) throw RuntimeException("could not open a window")
@@ -148,19 +65,19 @@ private fun runGlfw() {
     GL.createCapabilities()
     glfwSwapInterval(1)
     glfwSetKeyCallback(window) { _, key, scanCode, action, mods ->
-        model update KeyEvent(key, scanCode, parseAction(action), mods)
+        model mutate KeyEvent(key, scanCode, parseAction(action), mods)
     }
     glfwSetCursorPosCallback(window) { _, x, y ->
-        model update CursorEvent(x, y)
+        model mutate CursorEvent(x, y)
     }
     glfwSetMouseButtonCallback(window) { _, button, action, mods ->
-        model update MouseEvent(button, parseAction(action), mods)
+        model mutate MouseEvent(button, parseAction(action), mods)
     }
     glfwSetScrollCallback(window) { _, vertical, horizontal ->
-        model update ScrollEvent(vertical, horizontal)
+        model mutate ScrollEvent(vertical, horizontal)
     }
     glfwSetWindowSizeCallback(window) { _, w, h ->
-        model update ResizeEvent(w, h)
+        model mutate ResizeEvent(w, h)
     }
 
     val nvgContext = nvgCreate(NVG_ANTIALIAS or NVG_STENCIL_STROKES or NVG_DEBUG)
@@ -169,11 +86,7 @@ private fun runGlfw() {
     val h = MemoryUtil.memAllocInt(1)
     val windowW = MemoryUtil.memAllocInt(1)
     val windowH = MemoryUtil.memAllocInt(1)
-
-    val cursorX = MemoryUtil.memAllocDouble(1)
-    val cursorY = MemoryUtil.memAllocDouble(1)
-
-    val buffers = listOf(w, h, windowW, windowH, cursorX, cursorY)
+    val buffers = listOf(w, h, windowW, windowH)
 
     val canvas = Canvas `in` nvgContext
 
@@ -202,6 +115,15 @@ private fun runGlfw() {
     canvas.free()
     nvgDelete(nvgContext)
     glfwDestroyWindow(window)
+}
+
+private fun setUpWindowHints() {
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2)
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE)
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1)
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+    glfwWindowHint(GLFW_SAMPLES, 4)
 }
 
 private fun parseAction(rawAction: Int): GLFWAction = when (rawAction) {
