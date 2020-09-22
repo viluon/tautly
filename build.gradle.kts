@@ -7,7 +7,7 @@ plugins {
 group = "me.viluon"
 version = "0.0.1"
 
-val lwjglVersion = "3.2.4-SNAPSHOT"
+val lwjglVersion = "3.2.3"
 
 @Suppress("INACCESSIBLE_TYPE")
 val lwjglNatives = when (OperatingSystem.current()) {
