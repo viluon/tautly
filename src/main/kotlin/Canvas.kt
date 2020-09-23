@@ -15,12 +15,20 @@ class Canvas private constructor(
         }
     }
 
-    fun circle(cx: Float, cy: Float, r: Float, h: Float, s: Float, l: Float, a: Float) = fill {
-        NanoVG.nvgCircle(nvgContext, cx, cy, r)
-        NanoVG.nvgFillColor(nvgContext, NanoVG.nvgHSLA(h, s, l, unsigned_char(a), colourBuffer))
+    fun circle(pos: ScreenSpace, r: Double, h: Double, s: Double, l: Double, a: Double) = fill {
+        val (cx, cy) = pos.floats
+        NanoVG.nvgCircle(nvgContext, cx, cy, r.toFloat())
+        NanoVG.nvgFillColor(nvgContext, NanoVG.nvgHSLA(h.toFloat(), s.toFloat(), l.toFloat(), unsigned_char(a.toFloat()), colourBuffer))
     }
 
-    fun print(x: Float, y: Float, s: String) {
+    private inline val ScreenSpace.floats: Pair<Float, Float>
+        inline get() {
+            val (x, y) = this
+            return x.toFloat() to y.toFloat()
+        }
+
+    fun print(pos: ScreenSpace, s: String) {
+        val (x, y) = pos.floats
         NanoVG.nvgFillColor(nvgContext, NanoVG.nvgHSL(0f, 0f, 1f, colourBuffer))
         NanoVG.nvgText(nvgContext, x, y, s)
     }

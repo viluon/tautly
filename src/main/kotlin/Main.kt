@@ -31,20 +31,20 @@ private fun glfw() {
 }
 
 private fun loop() {
-    val radius = 20f
+    val radius = 20.0
 
     var model = Model(
-        currentColour = Triple(0f, 0f, 1f),
-        palette = PaletteModel(radius, 40f,
+        currentColour = Triple(0.0, 0.0, 1.0),
+        palette = PaletteModel(radius, 40.0,
             listOf(
-                Triple(0f, 0f, 1f),
-                Triple(68 / 360f, .74f, .54f),
-                Triple(191 / 360f, .74f, .54f),
-                Triple(323 / 360f, .74f, .54f),
-                Triple(12 / 360f, .74f, .54f),
-                Triple(0f, 0f, 0f),
+                Triple(0.0, 0.0, 1.0),
+                Triple(68 / 360.0, .74, .54),
+                Triple(191 / 360.0, .74, .54),
+                Triple(323 / 360.0, .74, .54),
+                Triple(12 / 360.0, .74, .54),
+                Triple(0.0, 0.0, 0.0),
             ).map { colour ->
-                Circle(radius, 0f to 0f, colour)
+                Circle(radius, ScreenSpace(0.0 to 0.0), colour)
             }
         )
     )
@@ -60,7 +60,7 @@ private fun loop() {
         model mutate KeyEvent(key, scanCode, parseAction(action), mods)
     }
     glfwSetCursorPosCallback(window) { _, x, y ->
-        model mutate CursorEvent(x, y)
+        model mutate CursorEvent(ScreenSpace(x to y))
     }
     glfwSetMouseButtonCallback(window) { _, button, action, mods ->
         model mutate MouseEvent(button, parseAction(action), mods)

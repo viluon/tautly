@@ -2,21 +2,17 @@ import org.lwjgl.glfw.GLFW
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-private infix fun Pair<Float, Float>.distance(other: Pair<Double, Double>): Float = sqrt(
-    (first - other.first.toFloat()).pow(2) + (second - other.second.toFloat()).pow(2)
-)
-
-private fun Model.drawCircle(pos: Pair<Double, Double>): Model = copy(
-    circles = circles + Circle(3f, (1 / zoom) * pos.map { it.toFloat() } - offset, currentColour)
+private fun Model.drawCircle(pos: ScreenSpace): Model = copy(
+    circles = circles + Circle(3.0, toWorldSpace(pos), currentColour)
 )
 
 fun Model.update(e: Event): Model = when (e) {
     is CursorEvent -> {
-        val newPos = e.x to e.y
+        val newPos = e.p
         when (true) {
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_LEFT] -> drawCircle(newPos).copy(cursorPos = newPos)
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_RIGHT] -> copy(
-                offset = offset + newPos.map { it.toFloat() } - cursorPos.map { it.toFloat() },
+                offset = offset + newPos - cursorPos,
                 cursorPos = newPos
             )
             else -> copy(cursorPos = newPos)
@@ -31,19 +27,19 @@ fun Model.update(e: Event): Model = when (e) {
 }
 
 private fun Model.handleScrollEvent(e: ScrollEvent): Model = when {
-    e.vertical < 0 -> updateWithZoom(zoom * 0.9f)
-    e.vertical > 0 -> updateWithZoom(zoom * 1.1f)
+    e.vertical < 0 -> updateWithZoom(zoom * 0.9)
+    e.vertical > 0 -> updateWithZoom(zoom * 1.1)
     else -> this
 }
 
-private fun Model.updateWithZoom(zoom: Float): Model = copy(
+private fun Model.updateWithZoom(zoom: Double): Model = copy(
     zoom = zoom,
     offset = offset + calculateZoomOffset(zoom)
 )
 
-private fun Model.calculateZoomOffset(newZoom: Float): Pair<Float, Float> {
-    val normalisedCursorPos = cursorPos.map { it.toFloat() } / windowSize.map { it.toFloat() }
-    val diagonal = sqrt(windowSize.first.toDouble().pow(2) + windowSize.second.toDouble().pow(2)).toFloat()
+private fun Model.calculateZoomOffset(newZoom: Double): ScreenSpace {
+    val normalisedCursorPos = cursorPos / ScreenSpace(windowSize.map { it.toDouble() })
+    val diagonal = sqrt(windowSize.first.toDouble().pow(2) + windowSize.second.toDouble().pow(2))
     return (diagonal * zoom - diagonal * newZoom) * normalisedCursorPos
 }
 
@@ -54,9 +50,10 @@ val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
     GLFW.GLFW_KEY_RIGHT to (1 to 0),
 )
 
+@Suppress("MapGetWithNotNullAssertionOperator")
 private fun Model.handleKeyPress(e: KeyEvent): Model = when (e.key) {
     GLFW.GLFW_KEY_Q -> copy(shouldClose = true)
-    in arrowKeys.keys -> copy(offset = offset + 10f * (arrowKeys[e.key]!! map { it.toFloat() }))
+    in arrowKeys.keys -> copy(offset = offset + ScreenSpace(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
     else -> this
 }
 
@@ -65,14 +62,14 @@ private infix fun Model.handleResizeEvent(e: ResizeEvent): Model {
     val y = wh - palette.separation - palette.radius
     // reposition the palette
     return copy(windowSize = e.w to e.h, palette = palette.copy(entries = palette.entries.mapIndexed { i, entry ->
-        val x = ww / 2f + (i - palette.entries.size / 2 + 0.5f) * (2 * palette.radius + palette.separation)
-        entry.copy(position = x to y)
+        val x = ww / 2.0 + (i - palette.entries.size / 2 + 0.5) * (2 * palette.radius + palette.separation)
+        entry.copy(position = ScreenSpace(x to y))
     }))
 }
 
 private infix fun Model.handleMouseEvent(e: MouseEvent): Model =
     if (e.action == GLFWAction.Pressed) ({
-        val paletteEntry = palette.entries.firstOrNull { (r, p, _) -> p distance cursorPos <= r }
+        val paletteEntry = palette.entries.firstOrNull { (r, p, _) -> (p - cursorPos).magnitude <= r }
         when {
             paletteEntry != null -> copy(currentColour = paletteEntry.colour)
             e.button == GLFW.GLFW_MOUSE_BUTTON_LEFT -> drawCircle(cursorPos)
