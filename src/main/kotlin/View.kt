@@ -5,12 +5,14 @@ import kotlin.math.sqrt
 
 fun view(canvas: Canvas, model: Model) {
     model.circles.forEach { (r, pos, colour) ->
-        val (x, y) = pos
+        val (x, y) = model.zoom * pos + model.offset
         val (h, s, l) = colour
         canvas.circle(x, y, r, h, s, l, 1f)
     }
 
     canvas drawPalette model
+
+    canvas.print(model.windowSize.first - 100f, 50f, model.offset.toString())
 }
 
 private infix fun Canvas.drawPalette(model: Model) {

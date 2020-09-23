@@ -2,6 +2,7 @@ import GLFWAction.*
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.nanovg.NanoVG
 import org.lwjgl.nanovg.NanoVG.nvgBeginFrame
 import org.lwjgl.nanovg.NanoVG.nvgEndFrame
 import org.lwjgl.nanovg.NanoVGGL3.*
@@ -9,10 +10,10 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.system.MemoryUtil.NULL
+import java.nio.IntBuffer
 
 fun main() {
     println("launching Tautly with LWJGL ${Version.getVersion()}")
-
     glfw()
 }
 
@@ -22,19 +23,19 @@ private fun glfw() {
     if (!glfwInit()) throw IllegalStateException("could not init GLFW")
 
     try {
-        runGlfw()
+        loop()
     } finally {
         glfwTerminate()
         errorCallback.free()
     }
 }
 
-private fun runGlfw() {
+private fun loop() {
     val radius = 20f
 
     var model = Model(
         currentColour = Triple(0f, 0f, 1f),
-        palette = PaletteModel(20f, 40f,
+        palette = PaletteModel(radius, 40f,
             listOf(
                 Triple(0f, 0f, 1f),
                 Triple(68 / 360f, .74f, .54f),
@@ -53,17 +54,8 @@ private fun runGlfw() {
     }()
 
     setUpWindowHints()
+    val window = setUpWindow()
 
-    val window = glfwCreateWindow(640, 480, "Tautly", NULL, NULL)
-    if (window == NULL) throw RuntimeException("could not open a window")
-
-    val videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor())
-        ?: throw RuntimeException("could not read the video mode of the primary monitor")
-
-    glfwSetWindowPos(window, (videoMode.width() - 640) / 2, (videoMode.height() - 480) / 2)
-    glfwMakeContextCurrent(window)
-    GL.createCapabilities()
-    glfwSwapInterval(1)
     glfwSetKeyCallback(window) { _, key, scanCode, action, mods ->
         model mutate KeyEvent(key, scanCode, parseAction(action), mods)
     }
@@ -73,7 +65,7 @@ private fun runGlfw() {
     glfwSetMouseButtonCallback(window) { _, button, action, mods ->
         model mutate MouseEvent(button, parseAction(action), mods)
     }
-    glfwSetScrollCallback(window) { _, vertical, horizontal ->
+    glfwSetScrollCallback(window) { _, horizontal, vertical ->
         model mutate ScrollEvent(vertical, horizontal)
     }
     glfwSetWindowSizeCallback(window) { _, w, h ->
@@ -81,14 +73,18 @@ private fun runGlfw() {
     }
 
     val nvgContext = nvgCreate(NVG_ANTIALIAS or NVG_STENCIL_STROKES or NVG_DEBUG)
-
-    val w = MemoryUtil.memAllocInt(1)
-    val h = MemoryUtil.memAllocInt(1)
-    val windowW = MemoryUtil.memAllocInt(1)
-    val windowH = MemoryUtil.memAllocInt(1)
-    val buffers = listOf(w, h, windowW, windowH)
+    println("loading fonts")
+    val font = NanoVG.nvgCreateFont(nvgContext, "iosevka", "/usr/share/fonts/TTF/iosevka-sparkle-regular.ttf")
+    if (font < 0) throw RuntimeException("could not load font")
+    NanoVG.nvgFontSize(nvgContext, 22f)
+    NanoVG.nvgFontFace(nvgContext, "iosevka")
+    NanoVG.nvgFontBlur(nvgContext, 0f)
+    println("fonts loaded")
 
     val canvas = Canvas `in` nvgContext
+
+    val buffers = allocateBuffers()
+    val (w, h, windowW, windowH) = buffers
 
     while (!model.shouldClose && !glfwWindowShouldClose(window)) {
         glfwGetFramebufferSize(window, w, h)
@@ -115,6 +111,22 @@ private fun runGlfw() {
     canvas.free()
     nvgDelete(nvgContext)
     glfwDestroyWindow(window)
+}
+
+private fun allocateBuffers(): List<IntBuffer> = generateSequence { MemoryUtil.memAllocInt(1) }.take(4).toList()
+
+private fun setUpWindow(): Long {
+    val window = glfwCreateWindow(640, 480, "Tautly", NULL, NULL)
+    if (window == NULL) throw RuntimeException("could not open a window")
+
+    val videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor())
+        ?: throw RuntimeException("could not read the video mode of the primary monitor")
+
+    glfwSetWindowPos(window, (videoMode.width() - 640) / 2, (videoMode.height() - 480) / 2)
+    glfwMakeContextCurrent(window)
+    GL.createCapabilities()
+    glfwSwapInterval(1)
+    return window
 }
 
 private fun setUpWindowHints() {
