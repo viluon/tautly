@@ -1,3 +1,4 @@
+import Colour.Companion.white
 import org.lwjgl.nanovg.NVGColor
 import org.lwjgl.nanovg.NanoVG
 
@@ -15,11 +16,21 @@ class Canvas private constructor(
         }
     }
 
-    fun circle(pos: Vec2<Screen>, r: Double, h: Double, s: Double, l: Double, a: Double) = fill {
+    private fun Colour.nvg(): NVGColor = NanoVG.nvgHSLA(
+        hue.toFloat(), saturation.toFloat(), lightness.toFloat(), unsigned_char(alpha.toFloat()), colourBuffer
+    )
+
+    fun circle(pos: Vec2<Screen>, r: Double, colour: Colour) = fill {
         val (cx, cy) = pos.floats
         NanoVG.nvgCircle(nvgContext, cx, cy, r.toFloat())
-        NanoVG.nvgFillColor(nvgContext,
-            NanoVG.nvgHSLA(h.toFloat(), s.toFloat(), l.toFloat(), unsigned_char(a.toFloat()), colourBuffer))
+        NanoVG.nvgFillColor(nvgContext, colour.nvg())
+    }
+
+    fun circleOutline(pos: Vec2<Screen>, r: Double, width: Double, colour: Colour) = stroke {
+        val (cx, cy) = pos.floats
+        NanoVG.nvgCircle(nvgContext, cx, cy, r.toFloat())
+        NanoVG.nvgStrokeColor(nvgContext, colour.nvg())
+        NanoVG.nvgStrokeWidth(nvgContext, width.toFloat())
     }
 
     private inline val Vec2<Screen>.floats: Pair<Float, Float>
@@ -28,18 +39,15 @@ class Canvas private constructor(
             return x.toFloat() to y.toFloat()
         }
 
-    fun print(pos: Vec2<Screen>, s: String) {
+    fun print(pos: Vec2<Screen>, s: String, colour: Colour = white) {
         val (x, y) = pos.floats
-        NanoVG.nvgFillColor(nvgContext, NanoVG.nvgHSL(0f, 0f, 1f, colourBuffer))
+        NanoVG.nvgFillColor(nvgContext, colour.nvg())
         NanoVG.nvgText(nvgContext, x, y, s)
     }
 
-    fun arrow(origin: Vec2<Screen>, arrow: Vec2<Screen>, colour: Triple<Double, Double, Double>) {
+    fun arrow(origin: Vec2<Screen>, arrow: Vec2<Screen>, colour: Colour) {
         NanoVG.nvgBeginPath(nvgContext)
-        NanoVG.nvgStrokeColor(
-            nvgContext,
-            NanoVG.nvgHSL(colour.first.toFloat(), colour.second.toFloat(), colour.third.toFloat(), colourBuffer)
-        )
+        NanoVG.nvgStrokeColor(nvgContext, colour.nvg())
         val (x0, y0) = origin.floats
         NanoVG.nvgMoveTo(nvgContext, x0, y0)
         val (x1, y1) = arrow.floats
@@ -51,6 +59,12 @@ class Canvas private constructor(
         NanoVG.nvgBeginPath(nvgContext)
         f()
         NanoVG.nvgFill(nvgContext)
+    }
+
+    private inline fun stroke(f: () -> Unit) {
+        NanoVG.nvgBeginPath(nvgContext)
+        f()
+        NanoVG.nvgStroke(nvgContext)
     }
 
     fun free() {

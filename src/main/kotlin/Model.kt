@@ -7,7 +7,7 @@ data class Model(
     val offset: Vec2<World> = Vec2(0.0 to 0.0),
     val windowSize: Pair<Int, Int> = 0 to 0,
     val palette: PaletteModel,
-    val currentColour: Triple<Double, Double, Double>,
+    val currentColour: Colour,
 )
 
 data class PaletteModel(
@@ -19,7 +19,7 @@ data class PaletteModel(
 data class Circle<S: Space>(
     val radius: Double,
     val position: Vec2<S>,
-    val colour: Triple<Double, Double, Double>,
+    val colour: Colour,
 )
 
 

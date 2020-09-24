@@ -1,3 +1,9 @@
+import Colour.Companion.black
+import Colour.Companion.lightBlue
+import Colour.Companion.lightGreen
+import Colour.Companion.magenta
+import Colour.Companion.orange
+import Colour.Companion.white
 import GLFWAction.*
 import org.lwjgl.Version
 import org.lwjgl.glfw.GLFW.*
@@ -32,59 +38,22 @@ private fun glfw() {
 
 private fun loop() {
     val radius = 20.0
-
-    // some extra colours
-    val greenish = Triple(159 / 360.0, 0.74, 0.54)
-    val purple = Triple(268 / 360.0, 0.74, 0.54)
-
     var model = Model(
-        currentColour = Triple(0.0, 0.0, 1.0),
+        currentColour = white,
         palette = PaletteModel(radius, 40.0,
-            listOf(
-                Triple(0.0, 0.0, 1.0),
-                Triple(68 / 360.0, .74, .54),
-                Triple(191 / 360.0, .74, .54),
-                Triple(323 / 360.0, .74, .54),
-                Triple(12 / 360.0, .74, .54),
-                Triple(0.0, 0.0, 0.0),
-            ).map { colour ->
+            listOf(white, lightGreen, lightBlue, magenta, orange, black).map { colour ->
                 Circle(radius, Vec2(0.0 to 0.0), colour)
             }
         )
     )
 
-    infix fun Model.mutate(ev: Event): Unit = {
-        model = update(ev)
-    }()
-
     setUpWindowHints()
     val window = setUpWindow()
-
-    glfwSetKeyCallback(window) { _, key, scanCode, action, mods ->
-        model mutate KeyEvent(key, scanCode, parseAction(action), mods)
-    }
-    glfwSetCursorPosCallback(window) { _, x, y ->
-        model mutate CursorEvent(Vec2(x to y))
-    }
-    glfwSetMouseButtonCallback(window) { _, button, action, mods ->
-        model mutate MouseEvent(button, parseAction(action), mods)
-    }
-    glfwSetScrollCallback(window) { _, horizontal, vertical ->
-        model mutate ScrollEvent(vertical, horizontal)
-    }
-    glfwSetWindowSizeCallback(window) { _, w, h ->
-        model mutate ResizeEvent(w, h)
+    setUpCallbacks(window) { 
+        model = model.update(it)
     }
 
-    val nvgContext = nvgCreate(NVG_ANTIALIAS or NVG_STENCIL_STROKES or NVG_DEBUG)
-    println("loading fonts")
-    val font = NanoVG.nvgCreateFont(nvgContext, "iosevka", "/usr/share/fonts/TTF/iosevka-sparkle-regular.ttf")
-    if (font < 0) throw RuntimeException("could not load font")
-    NanoVG.nvgFontSize(nvgContext, 22f)
-    NanoVG.nvgFontFace(nvgContext, "iosevka")
-    NanoVG.nvgFontBlur(nvgContext, 0f)
-    println("fonts loaded")
-
+    val nvgContext = createNvgContext()
     val canvas = Canvas `in` nvgContext
 
     val buffers = allocateBuffers()
@@ -117,16 +86,47 @@ private fun loop() {
     glfwDestroyWindow(window)
 }
 
+private fun createNvgContext(): Long {
+    val nvgContext = nvgCreate(NVG_ANTIALIAS or NVG_STENCIL_STROKES or NVG_DEBUG)
+    println("loading fonts")
+    val font = NanoVG.nvgCreateFont(nvgContext, "iosevka", "/usr/share/fonts/TTF/iosevka-sparkle-regular.ttf")
+    if (font < 0) throw RuntimeException("could not load font")
+    NanoVG.nvgFontSize(nvgContext, 22f)
+    NanoVG.nvgFontFace(nvgContext, "iosevka")
+    NanoVG.nvgFontBlur(nvgContext, 0f)
+    println("fonts loaded")
+    return nvgContext
+}
+
+private inline fun setUpCallbacks(window: Long, crossinline mutate: (Event) -> Unit) {
+    glfwSetKeyCallback(window) { _, key, scanCode, action, mods ->
+        mutate(KeyEvent(key, scanCode, parseAction(action), mods))
+    }
+    glfwSetCursorPosCallback(window) { _, x, y ->
+        mutate(CursorEvent(Vec2(x to y)))
+    }
+    glfwSetMouseButtonCallback(window) { _, button, action, mods ->
+        mutate(MouseEvent(button, parseAction(action), mods))
+    }
+    glfwSetScrollCallback(window) { _, horizontal, vertical ->
+        mutate(ScrollEvent(vertical, horizontal))
+    }
+    glfwSetWindowSizeCallback(window) { _, w, h ->
+        mutate(ResizeEvent(w, h))
+    }
+}
+
 private fun allocateBuffers(): List<IntBuffer> = generateSequence { MemoryUtil.memAllocInt(1) }.take(4).toList()
 
 private fun setUpWindow(): Long {
-    val window = glfwCreateWindow(640, 480, "Tautly", NULL, NULL)
+    val (w, h) = 640 to 480
+    val window = glfwCreateWindow(w, h, "Tautly", NULL, NULL)
     if (window == NULL) throw RuntimeException("could not open a window")
 
     val videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor())
         ?: throw RuntimeException("could not read the video mode of the primary monitor")
 
-    glfwSetWindowPos(window, (videoMode.width() - 640) / 2, (videoMode.height() - 480) / 2)
+    glfwSetWindowPos(window, (videoMode.width() - w) / 2, (videoMode.height() - h) / 2)
     glfwMakeContextCurrent(window)
     GL.createCapabilities()
     glfwSwapInterval(1)

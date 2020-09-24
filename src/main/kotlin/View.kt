@@ -4,15 +4,14 @@ import kotlin.math.roundToInt
 
 fun view(canvas: Canvas, model: Model) {
     model.circles.forEach { (r, pos, colour) ->
-        val (h, s, l) = colour
-        canvas.circle(model.toScreenSpace(pos), r, h, s, l, 1.0)
+        canvas.circle(model.toScreenSpace(pos), r, colour)
     }
 
     canvas drawPalette model
 
     val (x, y) = model.offset
-    canvas.print(Vec2<Screen>(model.windowSize.first - 150.0 to 50.0), "(${x.roundToInt()}, ${y.roundToInt()})")
-    canvas.print(Vec2<Screen>(model.windowSize.first - 150.0 to 80.0), "zoom ${model.zoom}")
+    canvas.print(Vec2(model.windowSize.first - 150.0 to 50.0), "(${x.roundToInt()}, ${y.roundToInt()})")
+    canvas.print(Vec2(model.windowSize.first - 150.0 to 80.0), "zoom ${model.zoom}")
 }
 
 private infix fun Canvas.drawPalette(model: Model) {
@@ -25,7 +24,10 @@ private infix fun Canvas.drawPalette(model: Model) {
         val distZeroOne = min(1.0, max(0.0, (model.cursorPos - pos).magnitude / falloff))
         val alpha = 1 - distZeroOne
 
-        val (h, s, l) = colour
-        circle(pos, radius, h, s, l, alpha)
+        val fadingColour = colour.copy(alpha = alpha)
+        circle(pos, radius, fadingColour)
+
+        if (colour == model.currentColour)
+            circleOutline(pos, radius * 1.2, 1.5, fadingColour.inverted)
     }
 }

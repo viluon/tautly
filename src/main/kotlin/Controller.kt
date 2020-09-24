@@ -47,7 +47,7 @@ val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
 @Suppress("MapGetWithNotNullAssertionOperator")
 private fun Model.handleKeyPress(e: KeyEvent): Model = when (e.key) {
     GLFW.GLFW_KEY_Q -> copy(shouldClose = true)
-    in arrowKeys.keys -> copy(offset = offset + Vec2<World>(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
+    in arrowKeys.keys -> copy(offset = offset + Vec2(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
     else -> this
 }
 
@@ -57,7 +57,7 @@ private infix fun Model.handleResizeEvent(e: ResizeEvent): Model {
     // reposition the palette
     return copy(windowSize = e.w to e.h, palette = palette.copy(entries = palette.entries.mapIndexed { i, entry ->
         val x = ww / 2.0 + (i - palette.entries.size / 2 + 0.5) * (2 * palette.radius + palette.separation)
-        entry.copy(position = Vec2<Screen>(x to y))
+        entry.copy(position = Vec2(x to y))
     }))
 }
 
