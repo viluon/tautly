@@ -33,6 +33,10 @@ private fun glfw() {
 private fun loop() {
     val radius = 20.0
 
+    // some extra colours
+    val greenish = Triple(159 / 360.0, 0.74, 0.54)
+    val purple = Triple(268 / 360.0, 0.74, 0.54)
+
     var model = Model(
         currentColour = Triple(0.0, 0.0, 1.0),
         palette = PaletteModel(radius, 40.0,

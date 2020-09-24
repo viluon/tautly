@@ -18,7 +18,8 @@ class Canvas private constructor(
     fun circle(pos: ScreenSpace, r: Double, h: Double, s: Double, l: Double, a: Double) = fill {
         val (cx, cy) = pos.floats
         NanoVG.nvgCircle(nvgContext, cx, cy, r.toFloat())
-        NanoVG.nvgFillColor(nvgContext, NanoVG.nvgHSLA(h.toFloat(), s.toFloat(), l.toFloat(), unsigned_char(a.toFloat()), colourBuffer))
+        NanoVG.nvgFillColor(nvgContext,
+            NanoVG.nvgHSLA(h.toFloat(), s.toFloat(), l.toFloat(), unsigned_char(a.toFloat()), colourBuffer))
     }
 
     private inline val ScreenSpace.floats: Pair<Float, Float>
@@ -31,6 +32,19 @@ class Canvas private constructor(
         val (x, y) = pos.floats
         NanoVG.nvgFillColor(nvgContext, NanoVG.nvgHSL(0f, 0f, 1f, colourBuffer))
         NanoVG.nvgText(nvgContext, x, y, s)
+    }
+
+    fun arrow(origin: ScreenSpace, arrow: ScreenSpace, colour: Triple<Double, Double, Double>) {
+        NanoVG.nvgBeginPath(nvgContext)
+        NanoVG.nvgStrokeColor(
+            nvgContext,
+            NanoVG.nvgHSL(colour.first.toFloat(), colour.second.toFloat(), colour.third.toFloat(), colourBuffer)
+        )
+        val (x0, y0) = origin.floats
+        NanoVG.nvgMoveTo(nvgContext, x0, y0)
+        val (x1, y1) = arrow.floats
+        NanoVG.nvgLineTo(nvgContext, x1, y1)
+        NanoVG.nvgStroke(nvgContext)
     }
 
     private inline fun fill(f: () -> Unit) {

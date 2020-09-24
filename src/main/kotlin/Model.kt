@@ -4,7 +4,7 @@ data class Model(
     val shouldClose: Boolean = false,
     val mousePressed: Map<Int, Boolean> = mapOf(),
     val zoom: Double = 1.0,
-    val offset: ScreenSpace = ScreenSpace(0.0 to 0.0),
+    val offset: WorldSpace = WorldSpace(0.0 to 0.0),
     val windowSize: Pair<Int, Int> = 0 to 0,
     val palette: PaletteModel,
     val currentColour: Triple<Double, Double, Double>,
@@ -24,11 +24,11 @@ data class Circle<P>(
 
 
 fun Model.toWorldSpace(pos: ScreenSpace): WorldSpace {
-    val (x, y) = (1 / zoom) * pos - offset
-    return WorldSpace(x to y)
+    val (x, y) = (1 / zoom) * pos
+    return WorldSpace(x to y) - offset
 }
 
 fun Model.toScreenSpace(pos: WorldSpace): ScreenSpace {
-    val (x, y) = pos
-    return zoom * (ScreenSpace(x to y) + offset)
+    val (x, y) = pos + offset
+    return zoom * (ScreenSpace(x to y))
 }

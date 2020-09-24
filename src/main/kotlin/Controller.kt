@@ -1,6 +1,4 @@
 import org.lwjgl.glfw.GLFW
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 private fun Model.drawCircle(pos: ScreenSpace): Model = copy(
     circles = circles + Circle(3.0, toWorldSpace(pos), currentColour)
@@ -12,7 +10,7 @@ fun Model.update(e: Event): Model = when (e) {
         when (true) {
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_LEFT] -> drawCircle(newPos).copy(cursorPos = newPos)
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_RIGHT] -> copy(
-                offset = offset + newPos - cursorPos,
+                offset = toWorldSpace(toScreenSpace(offset) + newPos - cursorPos),
                 cursorPos = newPos
             )
             else -> copy(cursorPos = newPos)
@@ -34,14 +32,10 @@ private fun Model.handleScrollEvent(e: ScrollEvent): Model = when {
 
 private fun Model.updateWithZoom(zoom: Double): Model = copy(
     zoom = zoom,
-    offset = offset + calculateZoomOffset(zoom)
+    offset = toWorldSpace(toScreenSpace(offset) + calculateZoomOffset(zoom))
 )
 
-private fun Model.calculateZoomOffset(newZoom: Double): ScreenSpace {
-    val normalisedCursorPos = cursorPos / ScreenSpace(windowSize.map { it.toDouble() })
-    val diagonal = sqrt(windowSize.first.toDouble().pow(2) + windowSize.second.toDouble().pow(2))
-    return (diagonal * zoom - diagonal * newZoom) * normalisedCursorPos
-}
+private fun Model.calculateZoomOffset(newZoom: Double): ScreenSpace = (1 - newZoom / zoom) * cursorPos
 
 val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
     GLFW.GLFW_KEY_UP to (0 to -1),
@@ -53,7 +47,7 @@ val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
 @Suppress("MapGetWithNotNullAssertionOperator")
 private fun Model.handleKeyPress(e: KeyEvent): Model = when (e.key) {
     GLFW.GLFW_KEY_Q -> copy(shouldClose = true)
-    in arrowKeys.keys -> copy(offset = offset + ScreenSpace(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
+    in arrowKeys.keys -> copy(offset = offset + WorldSpace(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
     else -> this
 }
 

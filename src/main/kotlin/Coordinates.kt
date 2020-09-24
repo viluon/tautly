@@ -23,6 +23,10 @@ inline class ScreenSpace(private val p: Pair<Double, Double>) {
         x0 / x1 to y0 / y1
     }
 
+    operator fun times(other: ScreenSpace): ScreenSpace = op(other) { x0, y0, x1, y1 ->
+        x0 * x1 to y0 * y1
+    }
+
     private inline fun op(
         other: ScreenSpace,
         f: (x0: Double, y0: Double, x1: Double, y1: Double) -> Pair<Double, Double>,
@@ -53,6 +57,10 @@ inline class WorldSpace(private val p: Pair<Double, Double>) {
 
     operator fun div(other: WorldSpace): WorldSpace = op(other) { x0, y0, x1, y1 ->
         x0 / x1 to y0 / y1
+    }
+
+    operator fun times(other: WorldSpace): WorldSpace = op(other) { x0, y0, x1, y1 ->
+        x0 * x1 to y0 * y1
     }
 
     private inline fun op(
