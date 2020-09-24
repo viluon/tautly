@@ -11,8 +11,8 @@ fun view(canvas: Canvas, model: Model) {
     canvas drawPalette model
 
     val (x, y) = model.offset
-    canvas.print(ScreenSpace(model.windowSize.first - 150.0 to 50.0), "(${x.roundToInt()}, ${y.roundToInt()})")
-    canvas.print(ScreenSpace(model.windowSize.first - 150.0 to 80.0), "zoom ${model.zoom}")
+    canvas.print(Vec2<Screen>(model.windowSize.first - 150.0 to 50.0), "(${x.roundToInt()}, ${y.roundToInt()})")
+    canvas.print(Vec2<Screen>(model.windowSize.first - 150.0 to 80.0), "zoom ${model.zoom}")
 }
 
 private infix fun Canvas.drawPalette(model: Model) {

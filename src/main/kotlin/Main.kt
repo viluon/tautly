@@ -48,7 +48,7 @@ private fun loop() {
                 Triple(12 / 360.0, .74, .54),
                 Triple(0.0, 0.0, 0.0),
             ).map { colour ->
-                Circle(radius, ScreenSpace(0.0 to 0.0), colour)
+                Circle(radius, Vec2(0.0 to 0.0), colour)
             }
         )
     )
@@ -64,7 +64,7 @@ private fun loop() {
         model mutate KeyEvent(key, scanCode, parseAction(action), mods)
     }
     glfwSetCursorPosCallback(window) { _, x, y ->
-        model mutate CursorEvent(ScreenSpace(x to y))
+        model mutate CursorEvent(Vec2(x to y))
     }
     glfwSetMouseButtonCallback(window) { _, button, action, mods ->
         model mutate MouseEvent(button, parseAction(action), mods)
