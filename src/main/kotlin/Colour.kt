@@ -11,4 +11,9 @@ data class Colour(val hue: Double, val saturation: Double, val lightness: Double
     }
 
     inline val inverted: Colour inline get() = Colour(1 - hue, saturation, 1 - lightness, alpha)
+
+    operator fun plus(other: Colour): Colour =
+        Colour(hue + other.hue, saturation + other.saturation, lightness + other.lightness, alpha + other.alpha)
 }
+
+operator fun Colour.div(d: Double) = Colour(hue / d, saturation / d, lightness / d, alpha / d)

@@ -8,13 +8,14 @@ group = "me.viluon"
 version = "0.0.1"
 
 val lwjglVersion = "3.2.3"
+val kotestVersion = "4.3.0.700-SNAPSHOT"
 
 @Suppress("INACCESSIBLE_TYPE")
 val lwjglNatives = when (OperatingSystem.current()) {
     OperatingSystem.LINUX   -> "natives-linux"
     OperatingSystem.MAC_OS  -> "natives-macos"
     OperatingSystem.WINDOWS -> "natives-windows"
-    else -> throw Error("Unrecognized or unsupported Operating system. Please set \"lwjglNatives\" manually")
+    else -> throw Error("Unrecognized or unsupported operating system. Please set \"lwjglNatives\" manually.")
 }
 
 repositories {
@@ -23,6 +24,9 @@ repositories {
 }
 
 dependencies {
+    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion") // for kotest framework
+    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion") // for kotest core jvm assertions
+    testImplementation("io.kotest:kotest-property:$kotestVersion") // for kotest property test
     testImplementation(kotlin("test-junit"))
 
     implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
@@ -48,4 +52,8 @@ tasks.withType<KotlinCompile> {
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
     freeCompilerArgs = listOf("-Xinline-classes")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }

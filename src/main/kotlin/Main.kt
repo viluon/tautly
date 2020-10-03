@@ -1,4 +1,5 @@
 import Colour.Companion.black
+import Colour.Companion.greenish
 import Colour.Companion.lightBlue
 import Colour.Companion.lightGreen
 import Colour.Companion.magenta
@@ -39,10 +40,11 @@ private fun glfw() {
 private fun loop() {
     val radius = 20.0
     var model = Model(
+        world = Leaf(greenish),
         currentColour = white,
         palette = PaletteModel(radius, 40.0,
             listOf(white, lightGreen, lightBlue, magenta, orange, black).map { colour ->
-                Circle(radius, Vec2(0.0 to 0.0), colour)
+                Circle(radius, Vec2.screen(0.0, 0.0), colour)
             }
         )
     )
@@ -103,7 +105,7 @@ private inline fun setUpCallbacks(window: Long, crossinline mutate: (Event) -> U
         mutate(KeyEvent(key, scanCode, parseAction(action), mods))
     }
     glfwSetCursorPosCallback(window) { _, x, y ->
-        mutate(CursorEvent(Vec2(x to y)))
+        mutate(CursorEvent(Vec2.screen(x, y)))
     }
     glfwSetMouseButtonCallback(window) { _, button, action, mods ->
         mutate(MouseEvent(button, parseAction(action), mods))

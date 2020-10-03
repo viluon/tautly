@@ -3,15 +3,15 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 fun view(canvas: Canvas, model: Model) {
-    model.circles.forEach { (r, pos, colour) ->
-        canvas.circle(model.toScreenSpace(pos), r, colour)
-    }
+//    model.circles.forEach { (r, pos, colour) ->
+//        canvas.circle(model.toScreenSpace(pos), r, colour)
+//    }
 
     canvas drawPalette model
 
     val (x, y) = model.offset
-    canvas.print(Vec2(model.windowSize.first - 150.0 to 50.0), "(${x.roundToInt()}, ${y.roundToInt()})")
-    canvas.print(Vec2(model.windowSize.first - 150.0 to 80.0), "zoom ${model.zoom}")
+    canvas.print(Vec2.screen(model.windowSize.x - 150.0, 50.0), "(${x.roundToInt()}, ${y.roundToInt()})")
+    canvas.print(Vec2.screen(model.windowSize.x - 150.0, 80.0), "zoom ${model.zoom}")
 }
 
 private infix fun Canvas.drawPalette(model: Model) {
