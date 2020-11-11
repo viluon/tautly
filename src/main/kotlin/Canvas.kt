@@ -34,15 +34,25 @@ class Canvas private constructor(
     }
 
     private inline val Vec2<Screen>.floats: Pair<Float, Float>
-        inline get() {
-            val (x, y) = this
-            return x.toFloat() to y.toFloat()
-        }
+        inline get() = x.toFloat() to y.toFloat()
 
     fun print(pos: Vec2<Screen>, s: String, colour: Colour = white) {
         val (x, y) = pos.floats
         NanoVG.nvgFillColor(nvgContext, colour.nvg())
         NanoVG.nvgText(nvgContext, x, y, s)
+    }
+
+    fun rectangle(origin: Vec2<Screen>, size: Vec2<Screen>, colour: Colour) = rect(::fill, origin, size, colour)
+    fun rectangleOutline(origin: Vec2<Screen>, size: Vec2<Screen>, colour: Colour) =
+        rect(::stroke, origin, size, colour)
+
+    private fun rect(f: (() -> Unit) -> Unit, origin: Vec2<Screen>, size: Vec2<Screen>, colour: Colour) = f {
+        val (x, y) = origin.floats
+        val (w, h) = size.floats
+        NanoVG.nvgRect(nvgContext, x, y, w, h)
+        NanoVG.nvgStrokeColor(nvgContext, colour.nvg())
+        NanoVG.nvgStrokeWidth(nvgContext, 2.0f)
+        NanoVG.nvgFillColor(nvgContext, colour.nvg())
     }
 
     fun arrow(origin: Vec2<Screen>, arrow: Vec2<Screen>, colour: Colour) {

@@ -28,26 +28,10 @@ class ConversionTest : StringSpec({
     }
 
     "screen space -- world space conversion should work regardless of zoom and offset" {
-        val genModel = Arb.bind(
-            Arb.numericDoubles(-1.0, 1.0),
-            Arb.numericDoubles(-1.0, 1.0),
-            Arb.positiveDoubles(),
-            Arb.positiveDoubles(),
-            Arb.positiveDoubles(),
-        ) { offsetX, offsetY, zoom, windowWidth, windowHeight ->
-            Model(
-                offset = Vec2.world(offsetX, offsetY),
-                zoom = zoom,
-                windowSize = Vec2.screen(windowWidth, windowHeight),
-                palette = PaletteModel(1.0, 1.0),
-                currentColour = Colour.white,
-                world = Leaf(Colour.black),
-            )
-        }
-        checkAll(50000, PropTestConfig(seed = 42), arbitrary { rs ->
+        checkAll(50_000, PropTestConfig(seed = 42), arbitrary { rs ->
             fun Arb<Int>.sampleToDouble(): Double = sample(rs).value.toDouble()
 
-            val model = genModel.sample(rs).value
+            val model = Arb.primitiveModel().sample(rs).value
             val (winW, winH) = model.windowSize
 
             model to Vec2.screen(

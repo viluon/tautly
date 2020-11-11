@@ -1,7 +1,7 @@
 import org.lwjgl.glfw.GLFW
 
 private fun Model.drawCircle(pos: Vec2<Screen>): Model = copy(
-//    circles = circles + Circle(3.0, toWorldSpace(pos), currentColour)
+    world = world.paint(toWorldSpace(pos), Vec2.world(0.25, 0.25), Leaf(currentColour))
 )
 
 fun Model.update(e: Event): Model = when (e) {

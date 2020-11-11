@@ -1,5 +1,6 @@
 import io.kotest.core.spec.style.StringSpec
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class QuadtreeTest : StringSpec( {
     "Quadtree.paint() should update the tree" {
@@ -9,5 +10,8 @@ class QuadtreeTest : StringSpec( {
 
         assertEquals(Leaf(Colour.black), tree[point])
         assertEquals(Leaf(Colour.white), tree2[point])
+        assertTrue(tree2.depth >= tree.depth)
     }
+
+    ""
 })
