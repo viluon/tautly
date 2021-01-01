@@ -3,20 +3,37 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 fun view(canvas: Canvas, model: Model) {
-//    model.circles.forEach { (r, pos, colour) ->
-//        canvas.circle(model.toScreenSpace(pos), r, colour)
-//    }
-
     canvas drawWorld model
+
+    val newZoom = 1.1 * model.zoom
+    val step = 90
+    for (_x in 10..model.windowSize.x.roundToInt() step step) {
+        for (_y in 10..model.windowSize.y.roundToInt() step step) {
+            val (x, y) = _x.toDouble() to _y.toDouble()
+            val origin = Vec2.screen(x, y)
+            val target = newZoom * origin - model.toScreenSpace(Vec2.zero()) + model.toScreenSpace(model.calculateZoomOffset(newZoom, model.cursorPos))
+            canvas.arrow(origin, target, Colour.purple)
+        }
+    }
+
+    canvas.arrow(Vec2.zero(), model.toScreenSpace(Vec2.zero()), Colour.black)
+    canvas.arrow(model.cursorPos, model.toScreenSpace(Vec2.zero()), Colour.lightGreen)
     canvas drawPalette model
 
+    val cursor = "(${model.cursorPos.x}, ${model.cursorPos.y})"
+    canvas.print(Vec2.screen(model.windowSize.x - 150.0 - 5 * cursor.length, 30.0), cursor)
+
     val (x, y) = model.offset
-    canvas.print(Vec2.screen(model.windowSize.x - 150.0, 50.0), "(${x.roundToInt()}, ${y.roundToInt()})")
+    val offset = "($x, $y)"
+    canvas.print(Vec2.screen(model.windowSize.x - 150.0 - 5 * offset.length, 50.0), offset)
+
     canvas.print(Vec2.screen(model.windowSize.x - 150.0, 80.0), "zoom ${model.zoom}")
 }
 
-private infix fun Canvas.drawWorld(model: Model) {
-    drawQuadtree(model.world, Vec2.screen(0.0, 0.0), Vec2.screen(model.windowSize.x, model.windowSize.x))
+private infix fun Canvas.drawWorld(model: Model) = let { canvas ->
+    model.run {
+        canvas.drawQuadtree(world, -0.5 * zoom * windowSize + toScreenSpace(Vec2.world(0.0, 0.0)), zoom * windowSize)
+    }
 }
 
 private fun Canvas.drawQuadtree(qt: Quadtree, origin: Vec2<Screen>, size: Vec2<Screen>): Unit = when (qt) {

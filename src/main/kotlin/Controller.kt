@@ -1,7 +1,10 @@
 import org.lwjgl.glfw.GLFW
 
+const val resolution = 1.0 / 128
+
+// TODO should return Quadtree
 private fun Model.drawCircle(pos: Vec2<Screen>): Model = copy(
-    world = world.paint(toWorldSpace(pos), Vec2.world(0.25, 0.25), Leaf(currentColour))
+    world = world.paint(toWorldSpace(pos), Vec2.world(resolution, resolution), Leaf(currentColour))
 )
 
 fun Model.update(e: Event): Model = when (e) {
@@ -32,10 +35,40 @@ private fun Model.handleScrollEvent(e: ScrollEvent): Model = when {
 
 private fun Model.updateWithZoom(zoom: Double): Model = copy(
     zoom = zoom,
-    offset = toWorldSpace(toScreenSpace(offset) + calculateZoomOffset(zoom))
+    offset = calculateZoomOffset(zoom)
 )
 
-private fun Model.calculateZoomOffset(newZoom: Double): Vec2<Screen> = (1 - newZoom / zoom) * cursorPos
+fun Model.`calculateZoomOffset nope`(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<Screen> {
+    val fromCentre = pos / windowSize - Vec2.screen(0.5, 0.5)
+    // this needs to be scaled
+    val mag = fromCentre.magnitude
+    val result = (1 + newZoom / zoom) * fromCentre
+    val lhs = (1 + newZoom / zoom) * mag
+    assert(lhs round 5 == result.magnitude round 5) {
+        "oops, $lhs isn't ${result.magnitude}"
+    }
+    return 100.0 * result
+}
+//2 * (newZoom / zoom) * (cursorPos / windowSize)
+
+fun Model.calculateZoomOffset(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<World> {
+//    toWorldSpace(cursorPos) == toWorldSpace(cursorPos) // with newZoom
+    val (unscaledX, unscaledY) = 2.0 * pos / windowSize - Vec2.screen(1.0, 1.0)
+    val cursorPosUnscaled = Vec2.world(unscaledX, unscaledY)
+    val result = (1 / newZoom + 1 / zoom) * cursorPosUnscaled + offset
+    val wsc0 = (1 / zoom * cursorPosUnscaled - offset)
+    val wsc1 = (1 / newZoom * cursorPosUnscaled - result)
+
+    // we wanna make this true
+//    wsc0 == wsc1
+
+//    1 / zoom * cursorPosUnscaled.x - offset.x == 1 / newZoom * cursorPosUnscaled.x - result.x
+//    result.x - offset.x == 1 / newZoom * cursorPosUnscaled.x + 1 / zoom * cursorPosUnscaled.x
+//    result.x - offset.x == (1 / newZoom + 1 / zoom) * cursorPosUnscaled.x
+//    result.x == (1 / newZoom + 1 / zoom) * cursorPosUnscaled.x + offset.x
+
+    return result.copy(y = offset.y) // try 1D first
+}
 
 val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
     GLFW.GLFW_KEY_UP to (0 to -1),
@@ -64,12 +97,11 @@ private infix fun Model.handleResizeEvent(e: ResizeEvent): Model {
 }
 
 private infix fun Model.handleMouseEvent(e: MouseEvent): Model =
-    if (e.action == GLFWAction.Pressed) ({
+    if (e.action == GLFWAction.Pressed) {
         val paletteEntry = palette.entries.firstOrNull { (r, p, _) -> (p - cursorPos).magnitude <= r }
-        when {
+        (when {
             paletteEntry != null -> copy(currentColour = paletteEntry.colour)
             e.button == GLFW.GLFW_MOUSE_BUTTON_LEFT -> drawCircle(cursorPos)
             else -> this
-        }
-    }()).copy(mousePressed = mousePressed + (e.button to true))
-    else copy(mousePressed = mousePressed + (e.button to false))
+        }).copy(mousePressed = mousePressed + (e.button to true))
+    } else copy(mousePressed = mousePressed + (e.button to false))

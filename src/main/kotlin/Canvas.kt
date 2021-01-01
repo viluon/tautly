@@ -46,7 +46,7 @@ class Canvas private constructor(
     fun rectangleOutline(origin: Vec2<Screen>, size: Vec2<Screen>, colour: Colour) =
         rect(::stroke, origin, size, colour)
 
-    private fun rect(f: (() -> Unit) -> Unit, origin: Vec2<Screen>, size: Vec2<Screen>, colour: Colour) = f {
+    private inline fun rect(f: (() -> Unit) -> Unit, origin: Vec2<Screen>, size: Vec2<Screen>, colour: Colour) = f {
         val (x, y) = origin.floats
         val (w, h) = size.floats
         NanoVG.nvgRect(nvgContext, x, y, w, h)

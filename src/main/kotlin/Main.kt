@@ -91,8 +91,12 @@ private fun loop() {
 private fun createNvgContext(): Long {
     val nvgContext = nvgCreate(NVG_ANTIALIAS or NVG_STENCIL_STROKES or NVG_DEBUG)
     println("loading fonts")
-    val font = NanoVG.nvgCreateFont(nvgContext, "iosevka", "/usr/share/fonts/TTF/iosevka-sparkle-regular.ttf")
-    if (font < 0) throw RuntimeException("could not load font")
+    NanoVG.nvgCreateFont(
+        nvgContext,
+        "iosevka",
+        "/usr/share/fonts/TTF/iosevka-sparkle-regular.ttf"
+    ).takeIf { it >= 0 } ?: throw RuntimeException("could not load font")
+
     NanoVG.nvgFontSize(nvgContext, 22f)
     NanoVG.nvgFontFace(nvgContext, "iosevka")
     NanoVG.nvgFontBlur(nvgContext, 0f)

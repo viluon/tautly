@@ -9,7 +9,7 @@ data class Node(val children: Array<Quadtree>) : Quadtree() {
         c + acc
     } / children.size.toDouble()
 
-    override val depth: Int = children.maxOf { it.depth }
+    override val depth: Int = children.maxOf { it.depth } + 1
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -43,25 +43,16 @@ tailrec fun <A> Quadtree.foldAt(point: Vec2<World>, init: A, f: (Quadtree, A) ->
     }
 }
 
-fun Quadtree.paint(point: Vec2<World>, resolution: Vec2<World>, leaf: Leaf): Quadtree =
-    paintRec(point, resolution.abs) {
-        leaf
-    }
-
-private tailrec fun Quadtree.paintRec(
-    point: Vec2<World>, resolution: Vec2<World>, cont: (Quadtree) -> Quadtree,
-): Quadtree {
+fun Quadtree.paint(point: Vec2<World>, resolution: Vec2<World>, stroke: Quadtree): Quadtree {
     val (resX, resY) = resolution
     return when {
-        resX >= 1.0 && resY >= 1.0 -> cont(this)
-        this is Leaf -> Node(arrayOf(this, this, this, this)).paintRec(point, resolution) { cont(it) }
+        resX >= 1.0 && resY >= 1.0 -> stroke
+        this is Leaf -> Node(many(4).toTypedArray()).paint(point, resolution, stroke)
         else -> { // this is Node
             this as Node
             val (index, newPoint) = point.translateForChild()
 
-            children[index].paintRec(newPoint, 2.0 * resolution) {
-                updateChild(index, cont(this))
-            }
+            updateChild(index, children[index].paint(newPoint, 2.0 * resolution, stroke))
         }
     }
 }
