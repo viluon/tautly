@@ -1,23 +1,8 @@
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 fun view(canvas: Canvas, model: Model) {
     canvas drawWorld model
-
-    val newZoom = 1.1 * model.zoom
-    val step = 90
-    for (_x in 10..model.windowSize.x.roundToInt() step step) {
-        for (_y in 10..model.windowSize.y.roundToInt() step step) {
-            val (x, y) = _x.toDouble() to _y.toDouble()
-            val origin = Vec2.screen(x, y)
-            val target = newZoom * origin - model.toScreenSpace(Vec2.zero()) + model.toScreenSpace(model.calculateZoomOffset(newZoom, model.cursorPos))
-            canvas.arrow(origin, target, Colour.purple)
-        }
-    }
-
-    canvas.arrow(Vec2.zero(), model.toScreenSpace(Vec2.zero()), Colour.black)
-    canvas.arrow(model.cursorPos, model.toScreenSpace(Vec2.zero()), Colour.lightGreen)
     canvas drawPalette model
 
     val cursor = "(${model.cursorPos.x}, ${model.cursorPos.y})"
@@ -26,7 +11,6 @@ fun view(canvas: Canvas, model: Model) {
     val (x, y) = model.offset
     val offset = "($x, $y)"
     canvas.print(Vec2.screen(model.windowSize.x - 150.0 - 5 * offset.length, 50.0), offset)
-
     canvas.print(Vec2.screen(model.windowSize.x - 150.0, 80.0), "zoom ${model.zoom}")
 }
 

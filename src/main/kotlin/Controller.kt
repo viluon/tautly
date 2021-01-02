@@ -13,7 +13,7 @@ fun Model.update(e: Event): Model = when (e) {
         when (true) {
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_LEFT] -> drawCircle(newPos).copy(cursorPos = newPos)
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_RIGHT] -> copy(
-                offset = toWorldSpace(toScreenSpace(offset) + newPos - cursorPos),
+                offset = offset + newPos - cursorPos,
                 cursorPos = newPos
             )
             else -> copy(cursorPos = newPos)
@@ -38,36 +38,8 @@ private fun Model.updateWithZoom(zoom: Double): Model = copy(
     offset = calculateZoomOffset(zoom)
 )
 
-fun Model.`calculateZoomOffset nope`(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<Screen> {
-    val fromCentre = pos / windowSize - Vec2.screen(0.5, 0.5)
-    // this needs to be scaled
-    val mag = fromCentre.magnitude
-    val result = (1 + newZoom / zoom) * fromCentre
-    val lhs = (1 + newZoom / zoom) * mag
-    assert(lhs round 5 == result.magnitude round 5) {
-        "oops, $lhs isn't ${result.magnitude}"
-    }
-    return 100.0 * result
-}
-//2 * (newZoom / zoom) * (cursorPos / windowSize)
-
-fun Model.calculateZoomOffset(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<World> {
-//    toWorldSpace(cursorPos) == toWorldSpace(cursorPos) // with newZoom
-    val (unscaledX, unscaledY) = 2.0 * pos / windowSize - Vec2.screen(1.0, 1.0)
-    val cursorPosUnscaled = Vec2.world(unscaledX, unscaledY)
-    val result = (1 / newZoom + 1 / zoom) * cursorPosUnscaled + offset
-    val wsc0 = (1 / zoom * cursorPosUnscaled - offset)
-    val wsc1 = (1 / newZoom * cursorPosUnscaled - result)
-
-    // we wanna make this true
-//    wsc0 == wsc1
-
-//    1 / zoom * cursorPosUnscaled.x - offset.x == 1 / newZoom * cursorPosUnscaled.x - result.x
-//    result.x - offset.x == 1 / newZoom * cursorPosUnscaled.x + 1 / zoom * cursorPosUnscaled.x
-//    result.x - offset.x == (1 / newZoom + 1 / zoom) * cursorPosUnscaled.x
-//    result.x == (1 / newZoom + 1 / zoom) * cursorPosUnscaled.x + offset.x
-
-    return result.copy(y = offset.y) // try 1D first
+fun Model.calculateZoomOffset(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<Screen> {
+    return offset + (newZoom / zoom - 1) * (offset - pos + 0.5 * windowSize)
 }
 
 val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
@@ -80,7 +52,7 @@ val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
 @Suppress("MapGetWithNotNullAssertionOperator")
 private fun Model.handleKeyPress(e: KeyEvent): Model = when (e.key) {
     GLFW.GLFW_KEY_Q -> copy(shouldClose = true)
-    in arrowKeys.keys -> copy(offset = offset + Vec2.world(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
+    in arrowKeys.keys -> copy(offset = offset + Vec2.screen(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
     else -> this
 }
 

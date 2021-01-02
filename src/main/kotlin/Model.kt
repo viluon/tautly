@@ -1,11 +1,11 @@
 data class Model(
     val world: Quadtree,
-    val cursorPos: Vec2<Screen> = Vec2.screen(0.0, 0.0),
+    val cursorPos: Vec2<Screen> = Vec2.zero(),
     val shouldClose: Boolean = false,
     val mousePressed: Map<Int, Boolean> = mapOf(),
     val zoom: Double = 1.0,
-    val offset: Vec2<World> = Vec2.world(0.0, 0.0),
-    val windowSize: Vec2<Screen> = Vec2.screen(0.0, 0.0),
+    val offset: Vec2<Screen> = Vec2.zero(),
+    val windowSize: Vec2<Screen> = Vec2.zero(),
     val palette: PaletteModel,
     val currentColour: Colour,
 )
@@ -24,11 +24,11 @@ data class Circle<S : Space>(
 
 
 fun Model.toWorldSpace(pos: Vec2<Screen>): Vec2<World> {
-    val (x, y) = 2.0 * pos / windowSize - Vec2.screen(1.0, 1.0)
-    return 1 / zoom * Vec2.world(x, y) - offset
+    val (x, y) = 1 / zoom * (2.0 * (pos - offset) / windowSize - Vec2.screen(1.0, 1.0))
+    return Vec2.world(x, y)
 }
 
 fun Model.toScreenSpace(pos: Vec2<World>): Vec2<Screen> {
-    val (x, y) = pos + offset
-    return 0.5 * (zoom * Vec2.screen(x, y) + Vec2.screen(1.0, 1.0)) * windowSize
+    val (x, y) = pos
+    return 0.5 * (zoom * Vec2.screen(x, y) + Vec2.screen(1.0, 1.0)) * windowSize + offset
 }

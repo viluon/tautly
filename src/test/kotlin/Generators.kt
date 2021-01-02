@@ -1,9 +1,6 @@
 import io.kotest.property.Arb
 import io.kotest.property.Gen
 import io.kotest.property.Shrinker
-import io.kotest.property.arbitrary.bind
-import io.kotest.property.arbitrary.numericDoubles
-import io.kotest.property.arbitrary.positiveDoubles
 import io.kotest.property.arbitrary.*
 import io.kotest.property.exhaustive.exhaustive
 import org.lwjgl.glfw.GLFW
@@ -18,7 +15,7 @@ fun Arb.Companion.primitiveModel(): Arb<Model> = Arb.bind(
     Arb.quadtree(1),
 ) { offsetX, offsetY, zoom, windowWidth, windowHeight, leaf ->
     Model(
-        offset = Vec2.world(offsetX, offsetY),
+        offset = Vec2.screen(offsetX, offsetY),
         zoom = zoom,
         windowSize = Vec2.screen(windowWidth, windowHeight),
         palette = PaletteModel(1.0, 1.0),

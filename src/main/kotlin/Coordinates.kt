@@ -12,14 +12,13 @@ data class Vec2<S : Space> private constructor(val x: Double, val y: Double) {
         fun <S : Space> zero(): Vec2<S> = Vec2<S>(0.0, 0.0)
 
         fun screen(a: Double, b: Double): Vec2<Screen> = Vec2(a, b)
+        fun screen(p: Pair<Double, Double>): Vec2<Screen> = screen(p.first, p.second)
 
         fun world(a: Double, b: Double): Vec2<World> = Vec2(a, b)
 //        when {
 //            abs(a) <= 1 && abs(b) <= 1 -> Vec2(a, b)
 //            else -> throw IllegalArgumentException("Vec2<World> components must be values between -1.0 and 1.0 (got $a, $b)")
 //        }
-
-        fun world(p: Pair<Double, Double>): Vec2<World> = world(p.first, p.second)
     }
 
     inline val magnitude: Double inline get() = sqrt(x.pow(2) + y.pow(2))

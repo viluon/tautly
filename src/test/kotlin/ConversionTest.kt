@@ -2,7 +2,8 @@ import Canvas.Companion.unsigned_char
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.*
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
 import kotlin.test.assertEquals
 
@@ -14,7 +15,7 @@ class ConversionTest : StringSpec({
 
     "the conversion from screen space to world space and back again shouldn't change the coords" {
         val model = Model(
-            offset = Vec2.world(0.1, 0.27),
+            offset = Vec2.screen(0.1, 0.27),
             zoom = 3.0,
             currentColour = Colour.white,
             palette = PaletteModel(1.0, 1.0),
@@ -28,7 +29,7 @@ class ConversionTest : StringSpec({
     }
 
     "screen space -- world space conversion should work regardless of zoom and offset" {
-        checkAll(50_000, PropTestConfig(seed = 42), arbitrary { rs ->
+        checkAll(100_000, PropTestConfig(seed = 42), arbitrary { rs ->
             fun Arb<Int>.sampleToDouble(): Double = sample(rs).value.toDouble()
 
             val model = Arb.primitiveModel().sample(rs).value
