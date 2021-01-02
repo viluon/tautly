@@ -1,3 +1,5 @@
+import kotlin.math.*
+
 data class Colour(val hue: Double, val saturation: Double, val lightness: Double, val alpha: Double = 1.0) {
     companion object {
         val namedColours: Map<String, Colour> = mapOf(
@@ -20,10 +22,21 @@ data class Colour(val hue: Double, val saturation: Double, val lightness: Double
         val orange by namedColours
     }
 
-    inline val inverted: Colour inline get() = Colour(1 - hue, saturation, 1 - lightness, alpha)
+    inline val inverted: Colour inline get() = copy(hue = 1 - hue, lightness = 1 - lightness)
 
     operator fun plus(other: Colour): Colour =
         Colour(hue + other.hue, saturation + other.saturation, lightness + other.lightness, alpha + other.alpha)
 }
 
-operator fun Colour.div(d: Double) = Colour(hue / d, saturation / d, lightness / d, alpha / d)
+// taken from https://stackoverflow.com/a/53328189
+fun List<Colour>.mix(): Colour {
+    val (x, y, z) = fold(Triple(0.0, 0.0, 0.0)) { (x, y, z), (hue, saturation, lightness) ->
+        Triple(
+            x + cos(hue / 180 * PI) * saturation,
+            y + sin(hue / 180 * PI) * saturation,
+            z + lightness,
+        )
+    }.let { (x, y, z) -> Triple(x / size, y / size, z / size) }
+
+    return Colour(atan2(y, x) * 180.0 / PI, sqrt(x * x + y * y), z)
+}

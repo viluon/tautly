@@ -1,4 +1,5 @@
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -9,21 +10,17 @@ object Screen : Space()
 @Suppress("DataClassPrivateConstructor")
 data class Vec2<S : Space> private constructor(val x: Double, val y: Double) {
     companion object {
-        fun <S : Space> zero(): Vec2<S> = Vec2<S>(0.0, 0.0)
+        fun <S : Space> zero(): Vec2<S> = Vec2(0.0, 0.0)
 
         fun screen(a: Double, b: Double): Vec2<Screen> = Vec2(a, b)
         fun screen(p: Pair<Double, Double>): Vec2<Screen> = screen(p.first, p.second)
 
         fun world(a: Double, b: Double): Vec2<World> = Vec2(a, b)
-//        when {
-//            abs(a) <= 1 && abs(b) <= 1 -> Vec2(a, b)
-//            else -> throw IllegalArgumentException("Vec2<World> components must be values between -1.0 and 1.0 (got $a, $b)")
-//        }
     }
 
     inline val magnitude: Double inline get() = sqrt(x.pow(2) + y.pow(2))
-
     inline val abs: Vec2<S> inline get() = copy(x = abs(x), y = abs(y))
+    inline val max: Double inline get() = max(x, y)
 
     fun round(n: Int): Vec2<S> = copy(x = x.round(n), y = y.round(n))
 

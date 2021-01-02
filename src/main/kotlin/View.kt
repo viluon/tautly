@@ -20,9 +20,9 @@ private infix fun Canvas.drawWorld(model: Model) = let { canvas ->
     }
 }
 
-private fun Canvas.drawQuadtree(qt: Quadtree, origin: Vec2<Screen>, size: Vec2<Screen>): Unit = when (qt) {
-    is Leaf -> rectangle(origin, size, qt.colour)
-    is Node -> {
+private fun Canvas.drawQuadtree(qt: Quadtree, origin: Vec2<Screen>, size: Vec2<Screen>): Unit = when {
+    qt is Leaf || size.max < 20.0 -> rectangle(origin, size, qt.colour)
+    qt is Node -> {
         val smaller = 0.5 * size
         drawQuadtree(qt.children[0], origin, smaller)
         drawQuadtree(qt.children[1], origin + smaller.copy(y = 0.0), smaller)
@@ -30,6 +30,7 @@ private fun Canvas.drawQuadtree(qt: Quadtree, origin: Vec2<Screen>, size: Vec2<S
         drawQuadtree(qt.children[3], origin + smaller, smaller)
         rectangleOutline(origin, size, Colour.lightBlue)
     }
+    else -> throw IllegalStateException()
 }
 
 private infix fun Canvas.drawPalette(model: Model) {

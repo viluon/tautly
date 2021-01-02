@@ -3,12 +3,18 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.10"
+    application
 }
+
 group = "me.viluon"
 version = "0.0.1"
 
 val lwjglVersion = "3.2.3"
 val kotestVersion = "4.3.0.700-SNAPSHOT"
+
+application {
+    mainClassName = "MainKt"
+}
 
 @Suppress("INACCESSIBLE_TYPE")
 val lwjglNatives = when (OperatingSystem.current()) {

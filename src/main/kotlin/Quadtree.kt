@@ -5,9 +5,7 @@ sealed class Quadtree {
 
 data class Node(val children: Array<Quadtree>) : Quadtree() {
     // the colour of a node is the average of the inner colours
-    override val colour: Colour = children.map { it.colour }.foldRight(Colour(0.0, 0.0, 0.0, 0.0)) { c, acc ->
-        c + acc
-    } / children.size.toDouble()
+    override val colour: Colour = children.map { it.colour }.mix()
 
     override val depth: Int = children.maxOf { it.depth } + 1
 
