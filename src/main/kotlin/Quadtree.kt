@@ -41,28 +41,94 @@ tailrec fun <A> Quadtree.foldAt(point: Vec2<World>, init: A, f: (Quadtree, A) ->
     }
 }
 
-fun Quadtree.paint(point: Vec2<World>, resolution: Vec2<World>, stroke: Quadtree): Quadtree {
-    val (resX, resY) = resolution
-    return when {
-        resX >= 1.0 && resY >= 1.0 -> stroke
-        this is Leaf -> Node(many(4).toTypedArray()).paint(point, resolution, stroke)
-        else -> { // this is Node
-            this as Node
-            val (index, newPoint) = point.translateForChild()
+fun Model.paint(point: Vec2<World>, resolution: Vec2<World>, stroke: Quadtree) =
+    world.paintUpwards(point, resolution, stroke, this).let { (model, qt) ->
+        model.copy(world = qt)
+    }
 
-            updateChild(index, children[index].paint(newPoint, 2.0 * resolution, stroke))
-        }
+tailrec fun Quadtree.paintUpwards(
+    point: Vec2<World>,
+    resolution: Vec2<World>,
+    stroke: Quadtree,
+    model: Model,
+    background: Quadtree = Leaf(Colour.black),
+): Pair<Model, Quadtree> = when {
+    point.abs.max > 1.0 -> {
+        val (index, _, newPoint) = point.translateForParent()
+        val newZoom = 2 * model.zoom
+        val newOffset = model.calculateZoomOffset(newZoom, model.toScreenSpace(newPoint, newZoom))
+        val newModel = model.copy(zoom = newZoom, offset = newOffset)
+        Node(background.many(4).toTypedArray())
+            .updateChild(index, this)
+            .paintUpwards(newPoint, 0.5 * resolution, stroke, newModel, background)
+    }
+    else -> model to paintDownwards(point, resolution, stroke)
+}
+
+fun Quadtree.paintDownwards(point: Vec2<World>, resolution: Vec2<World>, stroke: Quadtree): Quadtree = when {
+    resolution.min >= 1.0 -> stroke
+    this is Leaf -> Node(many(4).toTypedArray()).paintDownwards(point, resolution, stroke)
+    else -> { // this is Node
+        this as Node
+        val (index, newPoint) = point.translateForChild()
+
+        updateChild(index, children[index].paintDownwards(newPoint, 2.0 * resolution, stroke))
     }
 }
 
-private fun Vec2<World>.translateForChild(): Pair<Int, Vec2<World>> = when {
-    x < 0 && y < 0 -> 0 to 2.0 * this + Vec2.world(1.0, 1.0)
-    y < 0 -> 1 to 2.0 * this + Vec2.world(-1.0, 1.0)
-    x < 0 -> 2 to 2.0 * this + Vec2.world(1.0, -1.0)
-    else -> 3 to 2.0 * this + Vec2.world(-1.0, -1.0)
+private fun Vec2<World>.translateForChild(): Pair<Int, Vec2<World>> = (2.0 * this).let {
+    when {
+        x < 0 && y < 0 -> 0 to it + Vec2.world(1.0, 1.0)
+        y < 0 -> 1 to it + Vec2.world(-1.0, 1.0)
+        x < 0 -> 2 to it + Vec2.world(1.0, -1.0)
+        else -> 3 to it + Vec2.world(-1.0, -1.0)
+    }
 }
 
-fun Node.updateChild(n: Int, child: Quadtree): Node = Node(children.copyOf().also { it[n] = child })
+fun Vec2<World>.translateForParent(): Triple<Int, Vec2<World>, Vec2<World>> {
+    /*
+       -1   1
+      A | B | C
+     ---+---+--- -1
+      D | - | E
+     ---+---+---  1
+      F | G | H
+
+     there are two options for D & E and B & G,
+     pick the least index in each case
+     */
+    val (i, _) = when {
+        x < -1 && y < -1 -> 3 to 0.5 * this // A
+        x < -1 && y <  1 -> 1 to copy(x = 0.5 * x) // D
+        x < -1 && y >= 1 -> 1 to copy() // F
+        x <  1 && y < -1 -> 2 to copy() // B
+        x <  1 && y >= 1 -> 0 to copy() // G
+        x >= 1 && y < -1 -> 2 to copy() // C
+        x >= 1 && y <  1 -> 0 to copy() // E
+        x >= 1 && y >= 1 -> 0 to copy() // H
+        else -> throw IllegalStateException()
+    }
+
+    val newOrigin = when (i) {
+        0 -> Vec2.world(1.0, 1.0)
+        1 -> Vec2.world(-1.0, 1.0)
+        2 -> Vec2.world(1.0, -1.0)
+        3 -> Vec2.world(-1.0, -1.0)
+        else -> throw IllegalStateException()
+    }
+
+    return Triple(i, newOrigin, 0.5 * this - newOrigin)
+}
+
+fun Node.updateChild(n: Int, child: Quadtree): Quadtree = Node(children.copyOf().also { it[n] = child }).consolidate()
+
+fun Node.consolidate(): Quadtree = if (children.all { it is Leaf } && equalColours()) children[0] else this
+
+@Suppress("NOTHING_TO_INLINE", "SimplifyBooleanWithConstants")
+inline fun Node.equalColours(): Boolean = true
+        && children[0].colour == children[1].colour
+        && children[1].colour == children[2].colour
+        && children[2].colour == children[3].colour
 
 operator fun Quadtree.get(point: Vec2<World>): Leaf = foldAt(point, null as Leaf?) { quad, _ ->
     when (quad) {
@@ -70,51 +136,3 @@ operator fun Quadtree.get(point: Vec2<World>): Leaf = foldAt(point, null as Leaf
         else -> null
     }
 }!!
-
-operator fun Quadtree.set(point: Vec2<World>, size: Vec2<World>, leaf: Leaf): Quadtree {
-    return if (size == Vec2.world(0.0, 0.0)) this else paint(point, size, leaf)
-}
-
-//fun Quadtree.paint(point: Vec2<World>, size: Vec2<World>, leaf: Leaf): Quadtree {
-//    val (sizeX, sizeY) = size.abs
-//    return when {
-//        sizeX >= 1.0 && sizeY >= 1.0 -> leaf
-//        this is Leaf -> TODO()
-//        this is Node -> TODO()
-//        else -> throw IllegalStateException()
-//    }
-//}
-
-/*
-tailrec operator fun Quadtree.get(point: Vec2<World>): Leaf = when (this) {
-    is Leaf -> this
-    is Node -> {
-        val (x, y) = point
-        // TODO there should be a stopping condition based on the required resolution
-        //      to avoid recursing into sub-pixel nodes
-        when {
-            x < 0 && y < 0 -> children[0][2.0 * point + Vec2(1.0 to 1.0)]
-            y < 0 -> children[1][2.0 * point + Vec2(-1.0 to 1.0)]
-            x < 0 -> children[2][2.0 * point + Vec2(1.0 to -1.0)]
-            else -> children[3][2.0 * point + Vec2(-1.0 to -1.0)]
-        }
-    }
-}
-
-tailrec operator fun Quadtree.set(point: Vec2<World>, leaf: Leaf): Quadtree = when (this) {
-    // TODO there should be a "starting condition" based on the current brush size
-    //      to increase the resolution of the tree (recurse and create children until the brush
-    //      is large enough?)
-    is Leaf -> leaf
-    is Node -> {
-        val (x, y) = point
-        when {
-            // FIXME this should combine modified children into new nodes
-            x < 0 && y < 0 -> children[0].set(2.0 * point + Vec2(1.0 to 1.0), leaf)
-            y < 0 -> children[1].set(2.0 * point + Vec2(-1.0 to 1.0), leaf)
-            x < 0 -> children[2].set(2.0 * point + Vec2(1.0 to -1.0), leaf)
-            else -> children[3].set(2.0 * point + Vec2(-1.0 to -1.0), leaf)
-        }
-    }
-}
-// */

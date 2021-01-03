@@ -2,17 +2,16 @@ import org.lwjgl.glfw.GLFW
 
 const val resolution = 1.0 / 128
 
-// TODO should return Quadtree
-private fun Model.drawCircle(pos: Vec2<Screen>): Model = copy(
-    world = world.paint(toWorldSpace(pos), Vec2.world(resolution, resolution), Leaf(currentColour))
-)
+// TODO refactor Model so that this can return sth like Pair<Camera, Quadtree>
+private fun Model.drawCircle(pos: Vec2<Screen>): Model =
+    paint(toWorldSpace(pos), Vec2.world(resolution, resolution), Leaf(currentColour))
 
 fun Model.update(e: Event): Model = when (e) {
     is CursorEvent -> {
         val newPos = e.p
         when (true) {
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_LEFT] -> drawCircle(newPos).copy(cursorPos = newPos)
-            mousePressed[GLFW.GLFW_MOUSE_BUTTON_RIGHT] -> copy(
+            mousePressed[GLFW.GLFW_MOUSE_BUTTON_RIGHT], mousePressed[GLFW.GLFW_MOUSE_BUTTON_MIDDLE] -> copy(
                 offset = offset + newPos - cursorPos,
                 cursorPos = newPos
             )
@@ -38,9 +37,17 @@ private fun Model.updateWithZoom(zoom: Double): Model = copy(
     offset = calculateZoomOffset(zoom)
 )
 
-fun Model.calculateZoomOffset(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<Screen> {
-    return offset + (newZoom / zoom - 1) * (offset - pos + 0.5 * windowSize)
-}
+fun Model.calculateZoomOffset(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<Screen> =
+    calculateZoomOffset(zoom, newZoom, offset, pos, windowSize)
+
+fun calculateZoomOffset(
+    zoom: Double,
+    newZoom: Double,
+    offset: Vec2<Screen>,
+    pos: Vec2<Screen>,
+    windowSize: Vec2<Screen>,
+): Vec2<Screen> =
+    offset + (newZoom / zoom - 1) * (offset - pos + 0.5 * windowSize)
 
 val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
     GLFW.GLFW_KEY_UP to (0 to -1),

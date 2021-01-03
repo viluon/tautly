@@ -78,7 +78,7 @@ private fun loop() {
         nvgEndFrame(nvgContext)
 
         glfwSwapBuffers(window)
-        glfwPollEvents()
+        glfwWaitEventsTimeout(1.0)
 
         buffers.forEach { it.flip() }
     }

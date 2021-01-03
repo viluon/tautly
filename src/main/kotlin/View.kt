@@ -5,7 +5,22 @@ fun view(canvas: Canvas, model: Model) {
     canvas drawWorld model
     canvas drawPalette model
 
-    val cursor = "(${model.cursorPos.x}, ${model.cursorPos.y})"
+//    canvas.arrow(Vec2.zero(), model.offset, Colour.purple)
+    // show the offset
+    canvas.arrow(Vec2.zero(), model.toScreenSpace(Vec2.zero()), Colour.magenta)
+    val msg = try {
+        val (i, origin, vec) = model.toWorldSpace(model.cursorPos).translateForParent()
+        val newZoom = 2 * model.zoom
+        val zoomedModel = model.copy(zoom = newZoom, offset = model.calculateZoomOffset(newZoom, model.toScreenSpace(-origin)))
+        canvas.arrow(zoomedModel.toScreenSpace(Vec2.zero()), zoomedModel.toScreenSpace(vec), Colour.white)
+        "index $i"
+    } catch (e: IllegalStateException) {
+        "nope!"
+    }
+    canvas.print(model.cursorPos + Vec2.screen(10.0, -10.0), msg)
+
+    val (cx, cy) = model.toWorldSpace(model.cursorPos)
+    val cursor = "(${cx round 5}, ${cy round 5})"
     canvas.print(Vec2.screen(model.windowSize.x - 150.0 - 5 * cursor.length, 30.0), cursor)
 
     val (x, y) = model.offset

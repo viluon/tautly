@@ -2,7 +2,7 @@ import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.4.10"
+    kotlin("jvm") version "1.4.20"
     application
 }
 
@@ -11,6 +11,7 @@ version = "0.0.1"
 
 val lwjglVersion = "3.2.3"
 val kotestVersion = "4.3.0.700-SNAPSHOT"
+val kotlinxCoroutinesVersion = "1.4.2"
 
 application {
     mainClassName = "MainKt"
@@ -36,6 +37,7 @@ dependencies {
     testImplementation(kotlin("test-junit"))
 
     implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
 
     implementation("org.lwjgl", "lwjgl")
     implementation("org.lwjgl", "lwjgl-glfw")

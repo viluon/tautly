@@ -29,14 +29,14 @@ data class Colour(val hue: Double, val saturation: Double, val lightness: Double
 }
 
 // taken from https://stackoverflow.com/a/53328189
-fun List<Colour>.mix(): Colour {
-    val (x, y, z) = fold(Triple(0.0, 0.0, 0.0)) { (x, y, z), (hue, saturation, lightness) ->
-        Triple(
-            x + cos(hue / 180 * PI) * saturation,
-            y + sin(hue / 180 * PI) * saturation,
-            z + lightness,
-        )
-    }.let { (x, y, z) -> Triple(x / size, y / size, z / size) }
-
-    return Colour(atan2(y, x) * 180.0 / PI, sqrt(x * x + y * y), z)
+fun List<Colour>.mix(): Colour = fold(Triple(0.0, 0.0, 0.0)) { (x, y, z), (hue, saturation, lightness) ->
+    Triple(
+        x + cos(hue / 180 * PI) * saturation,
+        y + sin(hue / 180 * PI) * saturation,
+        z + lightness,
+    )
+}.let { (x, y, z) ->
+    Triple(x / size, y / size, z / size)
+}.let { (x, y, z) ->
+    Colour(atan2(y, x) * 180 / PI, sqrt(x * x + y * y), z)
 }

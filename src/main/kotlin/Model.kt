@@ -28,7 +28,7 @@ fun Model.toWorldSpace(pos: Vec2<Screen>): Vec2<World> {
     return Vec2.world(x, y)
 }
 
-fun Model.toScreenSpace(pos: Vec2<World>): Vec2<Screen> {
+fun Model.toScreenSpace(pos: Vec2<World>, zoom: Double = this.zoom): Vec2<Screen> {
     val (x, y) = pos
     return 0.5 * (zoom * Vec2.screen(x, y) + Vec2.screen(1.0, 1.0)) * windowSize + offset
 }
