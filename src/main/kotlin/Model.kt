@@ -1,19 +1,29 @@
 data class Model(
     val world: Quadtree,
-    val cursorPos: Vec2<Screen> = Vec2.zero(),
     val shouldClose: Boolean = false,
     val mousePressed: Map<Int, Boolean> = mapOf(),
+    val currentColour: Colour,
+    val palette: PaletteModel,
+    val camera: CameraModel = CameraModel(),
+    val flags: FlagsModel = FlagsModel(),
+) {
+    operator fun plus(cam: CameraModel) = copy(camera = cam)
+    operator fun plus(flags: FlagsModel) = copy(flags = flags)
+    operator fun plus(palette: PaletteModel) = copy(palette = palette)
+}
+
+// holds information specific to the way the canvas (Quadtree) is rendered to the screen,
+// independently of its contents
+data class CameraModel(
     val zoom: Double = 1.0,
     val offset: Vec2<Screen> = Vec2.zero(),
+    val cursorPos: Vec2<Screen> = Vec2.zero(),
     val windowSize: Vec2<Screen> = Vec2.zero(),
-    val palette: PaletteModel,
-    val currentColour: Colour,
-    val flags: FlagModel = FlagModel(),
 ) {
     val squareWindowSize: Vec2<Screen> = windowSize.max.vec()
 }
 
-data class FlagModel(
+data class FlagsModel(
     val showTreeQuadrants: Boolean = false,
 )
 
@@ -30,12 +40,12 @@ data class Circle<S : Space>(
 )
 
 
-fun Model.toWorldSpace(pos: Vec2<Screen>): Vec2<World> {
+fun CameraModel.toWorldSpace(pos: Vec2<Screen>): Vec2<World> {
     val (x, y) = 1 / zoom * (2.0 * (pos - offset) / squareWindowSize - Vec2.screen(1.0, 1.0))
     return Vec2.world(x, y)
 }
 
-fun Model.toScreenSpace(pos: Vec2<World>, zoom: Double = this.zoom): Vec2<Screen> {
+fun CameraModel.toScreenSpace(pos: Vec2<World>, zoom: Double = this.zoom): Vec2<Screen> {
     val (x, y) = pos
     return 0.5 * (zoom * Vec2.screen(x, y) + Vec2.screen(1.0, 1.0)) * squareWindowSize + offset
 }
