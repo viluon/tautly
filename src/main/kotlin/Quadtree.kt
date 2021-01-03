@@ -42,7 +42,7 @@ tailrec fun <A> Quadtree.foldAt(point: Vec2<World>, init: A, f: (Quadtree, A) ->
 }
 
 fun Model.paint(point: Vec2<World>, resolution: Vec2<World>, stroke: Quadtree) =
-    world.paintUpwards(point, resolution, stroke, this).let { (model, qt) ->
+    world.paintUpwards(point, resolution, stroke, this, Leaf(Colour.darkGrayishBlue)).let { (model, qt) ->
         model.copy(world = qt)
     }
 
@@ -51,7 +51,7 @@ tailrec fun Quadtree.paintUpwards(
     resolution: Vec2<World>,
     stroke: Quadtree,
     model: Model,
-    background: Quadtree = Leaf(Colour.black),
+    background: Quadtree,
 ): Pair<Model, Quadtree> = when {
     point.abs.max > 1.0 -> {
         val (index, origin, newPoint) = point.translateForParent()

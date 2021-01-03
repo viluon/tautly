@@ -1,5 +1,5 @@
 import Colour.Companion.black
-import Colour.Companion.greenish
+import Colour.Companion.darkGrayishBlue
 import Colour.Companion.lightBlue
 import Colour.Companion.lightGreen
 import Colour.Companion.magenta
@@ -41,7 +41,7 @@ private fun glfw() {
 private fun loop() {
     val radius = 20.0
     var model = Model(
-        world = Leaf(greenish),
+        world = Leaf(darkGrayishBlue),
         currentColour = white,
         palette = PaletteModel(radius, 40.0,
             listOf(white, lightGreen, lightBlue, magenta, orange, black).map { colour ->

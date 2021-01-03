@@ -8,6 +8,13 @@ data class Model(
     val windowSize: Vec2<Screen> = Vec2.zero(),
     val palette: PaletteModel,
     val currentColour: Colour,
+    val flags: FlagModel = FlagModel(),
+) {
+    val squareWindowSize: Vec2<Screen> = windowSize.max.vec()
+}
+
+data class FlagModel(
+    val showTreeQuadrants: Boolean = false,
 )
 
 data class PaletteModel(
@@ -24,11 +31,11 @@ data class Circle<S : Space>(
 
 
 fun Model.toWorldSpace(pos: Vec2<Screen>): Vec2<World> {
-    val (x, y) = 1 / zoom * (2.0 * (pos - offset) / windowSize - Vec2.screen(1.0, 1.0))
+    val (x, y) = 1 / zoom * (2.0 * (pos - offset) / squareWindowSize - Vec2.screen(1.0, 1.0))
     return Vec2.world(x, y)
 }
 
 fun Model.toScreenSpace(pos: Vec2<World>, zoom: Double = this.zoom): Vec2<Screen> {
     val (x, y) = pos
-    return 0.5 * (zoom * Vec2.screen(x, y) + Vec2.screen(1.0, 1.0)) * windowSize + offset
+    return 0.5 * (zoom * Vec2.screen(x, y) + Vec2.screen(1.0, 1.0)) * squareWindowSize + offset
 }

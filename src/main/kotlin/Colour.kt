@@ -11,6 +11,7 @@ data class Colour(val hue: Double, val saturation: Double, val lightness: Double
             "lightBlue" to Colour(191 / 360.0, .74, .54),
             "magenta" to Colour(323 / 360.0, .74, .54),
             "orange" to Colour(12 / 360.0, .74, .54),
+            "darkGrayishBlue" to Colour(220 / 360.0, .164, .216),
         )
         val black by namedColours
         val white by namedColours
@@ -20,6 +21,7 @@ data class Colour(val hue: Double, val saturation: Double, val lightness: Double
         val lightBlue by namedColours
         val magenta by namedColours
         val orange by namedColours
+        val darkGrayishBlue by namedColours
     }
 
     inline val inverted: Colour inline get() = copy(hue = 1 - hue, lightness = 1 - lightness)

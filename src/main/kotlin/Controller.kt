@@ -38,16 +38,16 @@ private fun Model.updateWithZoom(zoom: Double): Model = copy(
 )
 
 fun Model.calculateZoomOffset(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<Screen> =
-    calculateZoomOffset(zoom, newZoom, offset, pos, windowSize)
+    calculateZoomOffset(zoom, newZoom, offset, pos, squareWindowSize)
 
 fun calculateZoomOffset(
     zoom: Double,
     newZoom: Double,
     offset: Vec2<Screen>,
     pos: Vec2<Screen>,
-    windowSize: Vec2<Screen>,
+    squareWindowSize: Vec2<Screen>,
 ): Vec2<Screen> =
-    offset + (newZoom / zoom - 1) * (offset - pos + 0.5 * windowSize)
+    offset + (newZoom / zoom - 1) * (offset - pos + 0.5 * squareWindowSize)
 
 val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
     GLFW.GLFW_KEY_UP to (0 to -1),
@@ -59,6 +59,7 @@ val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
 @Suppress("MapGetWithNotNullAssertionOperator")
 private fun Model.handleKeyPress(e: KeyEvent): Model = when (e.key) {
     GLFW.GLFW_KEY_Q -> copy(shouldClose = true)
+    GLFW.GLFW_KEY_D -> copy(flags = flags.copy(showTreeQuadrants = !flags.showTreeQuadrants))
     in arrowKeys.keys -> copy(offset = offset + Vec2.screen(10.0 * (arrowKeys[e.key]!! map { it.toDouble() })))
     else -> this
 }

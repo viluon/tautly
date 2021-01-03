@@ -5,20 +5,6 @@ fun view(canvas: Canvas, model: Model) {
     canvas drawWorld model
     canvas drawPalette model
 
-    // show the offset
-    canvas.arrow(Vec2.zero(), model.toScreenSpace(Vec2.zero()), Colour.magenta)
-    val msg = try {
-        val (i, origin, vec) = model.toWorldSpace(model.cursorPos).translateForParent()
-        val newZoom = 2 * model.zoom
-        val newOffset = model.calculateZoomOffset(newZoom, model.toScreenSpace(-origin))
-        val zoomedModel = model.copy(zoom = newZoom, offset = newOffset)
-        canvas.arrow(zoomedModel.toScreenSpace(Vec2.zero()), zoomedModel.toScreenSpace(vec), Colour.white)
-        "index $i"
-    } catch (e: IllegalStateException) {
-        "nope!"
-    }
-    canvas.print(model.cursorPos + Vec2.screen(10.0, -10.0), msg)
-
     val (cx, cy) = model.toWorldSpace(model.cursorPos)
     val cursor = "(${cx round 5}, ${cy round 5})"
     canvas.print(Vec2.screen(model.windowSize.x - 150.0 - 5 * cursor.length, 30.0), cursor)
@@ -31,19 +17,22 @@ fun view(canvas: Canvas, model: Model) {
 
 private infix fun Canvas.drawWorld(model: Model) = let { canvas ->
     model.run {
-        canvas.drawQuadtree(world, -0.5 * zoom * windowSize + toScreenSpace(Vec2.world(0.0, 0.0)), zoom * windowSize)
+        canvas.drawQuadtree(model.flags, world, -0.5 * zoom * squareWindowSize + toScreenSpace(Vec2.zero()), zoom * squareWindowSize)
     }
 }
 
-private fun Canvas.drawQuadtree(qt: Quadtree, origin: Vec2<Screen>, size: Vec2<Screen>): Unit = when {
-    qt is Leaf || size.max < 20.0 -> rectangle(origin, size, qt.colour)
+private fun Canvas.drawQuadtree(flags: FlagModel, qt: Quadtree, origin: Vec2<Screen>, size: Vec2<Screen>): Unit = when {
+    qt is Leaf || size.max < 20.0 -> {
+        val pointOne = 1.25 * Vec2.screen(.5, .5)
+        rectangle(origin - pointOne, size + pointOne, qt.colour)
+    }
     qt is Node -> {
         val smaller = 0.5 * size
-        drawQuadtree(qt.children[0], origin, smaller)
-        drawQuadtree(qt.children[1], origin + smaller.copy(y = 0.0), smaller)
-        drawQuadtree(qt.children[2], origin + smaller.copy(x = 0.0), smaller)
-        drawQuadtree(qt.children[3], origin + smaller, smaller)
-        rectangleOutline(origin, size, Colour.lightBlue)
+        drawQuadtree(flags, qt.children[0], origin, smaller)
+        drawQuadtree(flags, qt.children[1], origin + smaller.copy(y = 0.0), smaller)
+        drawQuadtree(flags, qt.children[2], origin + smaller.copy(x = 0.0), smaller)
+        drawQuadtree(flags, qt.children[3], origin + smaller, smaller)
+        if (flags.showTreeQuadrants) rectangleOutline(origin, size, Colour.lightBlue) else Unit
     }
     else -> throw IllegalStateException()
 }

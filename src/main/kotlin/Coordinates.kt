@@ -48,3 +48,6 @@ operator fun <S : Space> Double.times(pos: Vec2<S>): Vec2<S> {
     val (x, y) = pos
     return pos.copy(x = this * x, y = this * y)
 }
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun <S: Space> Double.vec(): Vec2<S> = Vec2.zero<S>().copy(this, this)
