@@ -19,6 +19,7 @@ import org.lwjgl.system.MemoryUtil
 import org.lwjgl.system.MemoryUtil.NULL
 import java.nio.IntBuffer
 
+// TODO add an animated Tautly logo when opening the app and clear it with an invisible sponge
 fun main() {
     println("launching Tautly with LWJGL ${Version.getVersion()}")
     glfw()

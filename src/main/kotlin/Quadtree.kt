@@ -54,9 +54,9 @@ tailrec fun Quadtree.paintUpwards(
     background: Quadtree = Leaf(Colour.black),
 ): Pair<Model, Quadtree> = when {
     point.abs.max > 1.0 -> {
-        val (index, _, newPoint) = point.translateForParent()
+        val (index, origin, newPoint) = point.translateForParent()
         val newZoom = 2 * model.zoom
-        val newOffset = model.calculateZoomOffset(newZoom, model.toScreenSpace(newPoint, newZoom))
+        val newOffset = model.calculateZoomOffset(newZoom, model.toScreenSpace(-origin))
         val newModel = model.copy(zoom = newZoom, offset = newOffset)
         Node(background.many(4).toTypedArray())
             .updateChild(index, this)
@@ -117,7 +117,7 @@ fun Vec2<World>.translateForParent(): Triple<Int, Vec2<World>, Vec2<World>> {
         else -> throw IllegalStateException()
     }
 
-    return Triple(i, newOrigin, 0.5 * this - newOrigin)
+    return Triple(i, newOrigin, 0.5 * (this - newOrigin))
 }
 
 fun Node.updateChild(n: Int, child: Quadtree): Quadtree = Node(children.copyOf().also { it[n] = child }).consolidate()

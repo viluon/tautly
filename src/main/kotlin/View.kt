@@ -5,13 +5,13 @@ fun view(canvas: Canvas, model: Model) {
     canvas drawWorld model
     canvas drawPalette model
 
-//    canvas.arrow(Vec2.zero(), model.offset, Colour.purple)
     // show the offset
     canvas.arrow(Vec2.zero(), model.toScreenSpace(Vec2.zero()), Colour.magenta)
     val msg = try {
         val (i, origin, vec) = model.toWorldSpace(model.cursorPos).translateForParent()
         val newZoom = 2 * model.zoom
-        val zoomedModel = model.copy(zoom = newZoom, offset = model.calculateZoomOffset(newZoom, model.toScreenSpace(-origin)))
+        val newOffset = model.calculateZoomOffset(newZoom, model.toScreenSpace(-origin))
+        val zoomedModel = model.copy(zoom = newZoom, offset = newOffset)
         canvas.arrow(zoomedModel.toScreenSpace(Vec2.zero()), zoomedModel.toScreenSpace(vec), Colour.white)
         "index $i"
     } catch (e: IllegalStateException) {
