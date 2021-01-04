@@ -1,3 +1,6 @@
+import kotlin.math.log2
+import kotlin.math.roundToInt
+
 sealed class Quadtree {
     abstract val colour: Colour
     abstract val depth: Int
@@ -50,19 +53,19 @@ tailrec fun Quadtree.paintUpwards(
     point: Vec2<World>,
     resolution: Vec2<World>,
     stroke: Quadtree,
-    model: CameraModel,
+    cam: CameraModel,
     background: Quadtree,
 ): Pair<CameraModel, Quadtree> = when {
     point.abs.max > 1.0 -> {
         val (index, origin, newPoint) = point.translateForParent()
-        val newZoom = 2 * model.zoom
-        val newOffset = model.calculateZoomOffset(newZoom, model.toScreenSpace(-origin))
-        val newModel = model.copy(zoom = newZoom, offset = newOffset)
+        val newZoomLvl: Int = (1.0 / log2(CameraModel.zoomBase) + cam.zoomLevel).roundToInt()
+        val newModel =
+            cam.copy(zoomLevel = newZoomLvl, offset = cam.calculateZoomOffset(newZoomLvl, cam.toScreenSpace(-origin)))
         Node(background.many(4).toTypedArray())
             .updateChild(index, this)
             .paintUpwards(newPoint, 0.5 * resolution, stroke, newModel, background)
     }
-    else -> model to paintDownwards(point, resolution, stroke)
+    else -> cam to paintDownwards(point, resolution, stroke)
 }
 
 fun Quadtree.paintDownwards(point: Vec2<World>, resolution: Vec2<World>, stroke: Quadtree): Quadtree = when {

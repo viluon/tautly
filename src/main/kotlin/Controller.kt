@@ -1,4 +1,6 @@
+import CameraModel.Companion.calculateZoom
 import org.lwjgl.glfw.GLFW
+import kotlin.math.sign
 
 const val resolution = 1.0 / 128
 
@@ -10,7 +12,7 @@ fun Model.update(e: Event): Model = when (e) {
     is CursorEvent -> {
         val newPos = e.p
         when (true) {
-            mousePressed[GLFW.GLFW_MOUSE_BUTTON_LEFT] -> drawCircle(newPos) + camera.copy(cursorPos = newPos)
+            mousePressed[GLFW.GLFW_MOUSE_BUTTON_LEFT] -> (this + camera.copy(cursorPos = newPos)).drawCircle(newPos)
             mousePressed[GLFW.GLFW_MOUSE_BUTTON_RIGHT], mousePressed[GLFW.GLFW_MOUSE_BUTTON_MIDDLE] -> this + camera.copy(
                 offset = camera.offset + newPos - camera.cursorPos,
                 cursorPos = newPos
@@ -27,27 +29,15 @@ fun Model.update(e: Event): Model = when (e) {
 }
 
 private fun CameraModel.handleScrollEvent(e: ScrollEvent): CameraModel = when {
-    e.vertical < 0 -> updateWithZoom(zoom * 0.9)
-    e.vertical > 0 -> updateWithZoom(zoom * 1.1)
+    e.vertical != 0.0 -> updateWithZoomLevel(zoomLevel + 32 * e.vertical.sign.toInt())
     else -> this
 }
 
-private fun CameraModel.updateWithZoom(zoom: Double): CameraModel = copy(
-    zoom = zoom,
-    offset = calculateZoomOffset(zoom)
-)
+private fun CameraModel.updateWithZoomLevel(zoomLevel: Int): CameraModel =
+    copy(zoomLevel = zoomLevel, offset = calculateZoomOffset(zoomLevel))
 
-fun CameraModel.calculateZoomOffset(newZoom: Double, pos: Vec2<Screen> = cursorPos): Vec2<Screen> =
-    calculateZoomOffset(zoom, newZoom, offset, pos, squareWindowSize)
-
-fun calculateZoomOffset(
-    zoom: Double,
-    newZoom: Double,
-    offset: Vec2<Screen>,
-    pos: Vec2<Screen>,
-    squareWindowSize: Vec2<Screen>,
-): Vec2<Screen> =
-    offset + (newZoom / zoom - 1) * (offset - pos + 0.5 * squareWindowSize)
+fun CameraModel.calculateZoomOffset(newZoomLevel: Int, pos: Vec2<Screen> = cursorPos): Vec2<Screen> =
+    offset + (calculateZoom(newZoomLevel - zoomLevel) - 1) * (offset - pos + 0.5 * squareWindowSize)
 
 val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
     GLFW.GLFW_KEY_UP to (0 to -1),
@@ -56,7 +46,6 @@ val arrowKeys: Map<Int, Pair<Int, Int>> = mapOf(
     GLFW.GLFW_KEY_RIGHT to (1 to 0),
 )
 
-@Suppress("MapGetWithNotNullAssertionOperator")
 private fun Model.handleKeyPress(e: KeyEvent): Model = when (e.key) {
     GLFW.GLFW_KEY_Q -> copy(shouldClose = true)
     GLFW.GLFW_KEY_D -> this + flags.copy(showTreeQuadrants = !flags.showTreeQuadrants)

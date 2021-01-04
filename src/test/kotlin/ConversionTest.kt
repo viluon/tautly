@@ -14,12 +14,9 @@ class ConversionTest : StringSpec({
     }
 
     "the conversion from screen space to world space and back again shouldn't change the coords" {
-        val model = Model(
+        val model = CameraModel(
             offset = Vec2.screen(0.1, 0.27),
-            zoom = 3.0,
-            currentColour = Colour.white,
-            palette = PaletteModel(1.0, 1.0),
-            world = Leaf(Colour.black),
+            zoomLevel = 3,
             windowSize = Vec2.screen(640.0, 480.0)
         )
 

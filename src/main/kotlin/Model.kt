@@ -1,3 +1,7 @@
+import kotlin.math.log
+import kotlin.math.pow
+import kotlin.math.roundToInt
+
 data class Model(
     val world: Quadtree,
     val shouldClose: Boolean = false,
@@ -15,12 +19,20 @@ data class Model(
 // holds information specific to the way the canvas (Quadtree) is rendered to the screen,
 // independently of its contents
 data class CameraModel(
-    val zoom: Double = 1.0,
+    val zoomLevel: Int = 0,
     val offset: Vec2<Screen> = Vec2.zero(),
     val cursorPos: Vec2<Screen> = Vec2.zero(),
     val windowSize: Vec2<Screen> = Vec2.zero(),
 ) {
+    companion object {
+        const val zoomBase = 1 + 1 / 256.0
+
+        fun calculateZoom(level: Int): Double = zoomBase.pow(level)
+        fun calculateZoomLevel(zoom: Double): Int = log(zoom, zoomBase).roundToInt()
+    }
+
     val squareWindowSize: Vec2<Screen> = windowSize.max.vec()
+    val zoom: Double = calculateZoom(zoomLevel)
 }
 
 data class FlagsModel(
